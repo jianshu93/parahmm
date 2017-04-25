@@ -47,6 +47,11 @@ Since it is a bit late in the whole schedule, we would try our best to catch up.
 ## Issues we concerned:
 * It should be possible to accelerate long Markov chains with lots of hidden states and observation types though multithreading. However, we do search on the internet and find out there are not too many application that would make use of this kind of Hidden Markov model. We are not sure if this would be a big problem. This project would make use of many of the idea we learnt in the course but it might not be that useful for real workload. We do plan to measure the performance on different size of the working set, we may be able to implement a more agile algorithm suitable for different size of models.
 
+## Modified time table for coming up tasks:
+* Apr. 27th – Apr. 30th: Implementing SIMD version of forward/backward algorithm and Baum-Welch by Yuchen, SIMD version of Vertibi algorithm by Danhao.
+* May. 1th – May. 3th: Taking exams. Try some matrix multiplication lib for Baum-Welch algorithm if possible.
+* May. 4th – May.7th: Use OpenMP to parallel the algorithms and explore data locality in the algorithm by both Yuchen and Danhao.
+* May. 9th – May. 11th: Explore other possible optimizations and try to make the implementation flexible for different size of working set. Documenting and prepare for presentation.
 
 
 ## Reference
