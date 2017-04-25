@@ -1,3 +1,7 @@
+Team members:
+- Yuchen Huo (<yhuo1@andrew.cmu.edu>)
+- Danhao Guo (<danhaog@andrew.cmu.edu>)
+
 # Middle Checkpoint
 Our original project idea was to extend the Kernalized Correlation Filter (KCF), a fast object tracker, to the multicore platform. We downloaded the original paper’s code and built up the test framework using the [Need for Speed benchmark](http://ci2cv.net/nfs/index.html)  and [VOT2014 benchmark]( http://www.votchallenge.net/vot2014/dataset.html). We then performed some profiling on the sequential implementation. The result shows that most of the cpu time is spent in the discrete fourier transform and the HOG feature extraction which is consistent to our intuition. However, as in the object tracking tasks, the bounding box of the target object is not very large and after using HOG feature which compress 4x4 cells into single feature descriptor, the dft computation is conducted on a quite small matrix. According to our measurement, the processing time for a single frame is about 8ms where dft time holds for 4-5ms. Since in object tracking task each frame’s computation depends on the result of the previous one, the dependency is pretty high. Therefore, we think this system is not very suitable for multithreading, since the overhead of spawning and synchronization would be larger than the actual computation. We actually tries to use the FFTW library to replace the opencv implementation for the code, the performance becomes worse. Therefore, the only parallelism we could benefit from would be using SIMD instructions. We think this project actually could not get much performance improvement from the multicore platform and seems to be quite narrow in opptimization approaches. We decided to switch the project. 
 
@@ -13,29 +17,23 @@ Markov model describes systems with randomly changes in which the future states 
 
 ## Challenges:
 1. Identify performance bottleneck and analyze the feasibility of parallelism on the part is not that easy.
-2. Our focus is on HMM with large state space. In this regard, the space needed for parameters are too large to be loaded into L1 cache at the same time. Implementing parallel HMM with friendly data locality is also a big factor of performance improvement.
+2. For HMM with large state space, the space needed for parameters are too large to be loaded into L1 cache at the same time. Implementing parallel HMM with friendly data locality is also a big factor of performance improvement.
 
 ## Resources:
 A multi-core machine to evaluate the performance.
 
 ## Our goals:
-Minimum Goal:
-Implementing a multi-threaded HMM (including baum–Welch algorithm, forward algorithm, backward algorithm and viterbi algorithm)
+75% Goal:
+Implementing a multi-threaded HMM with SIMD intrinsics especially for large state space. (including baum–Welch algorithm, forward algorithm, backward algorithm and viterbi algorithm)
 
-Expected Goal:
-Exploring data access pattern of the algorithm and implementing parallel HMM algorithms with data locality.
-
-Stretch Goal: 
-Accelerate HMM using SIMD intrinsics to further improve performance.
+100% Goal:
+Exploring bottleneck of HMM for relative small state space. Generalizing HMM algorithm optimization with different strategies for different state space configuration. 
 
 ## Platform choice:
 Multi-core CPU with SIMD intrinsics
 
 # Original Proposal
 ## C++ Parallel KCF Tracker
-Team members:
-- Yuchen Huo (<yhuo1@andrew.cmu.edu>)
-- Danhao Guo (<danhaog@andrew.cmu.edu>)
 
 ## Summary
 We are going to extend the Kernalized Correlation Filter (KCF) [1, 2], a fast object tracker, to the multicore platform.
