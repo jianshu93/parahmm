@@ -1,5 +1,5 @@
-# NOTICE
-We have changed our project to https://firebb.github.io/parahmm/.
+# Middle Checkpoint
+Our original project idea is to implement 
 
 # C++ Parallel KCF Tracker
 Team members:
