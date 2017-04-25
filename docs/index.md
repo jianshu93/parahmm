@@ -2,22 +2,22 @@
 Our original project idea is to extend the Kernalized Correlation Filter (KCF), a fast object tracker, to the multicore platform. We download the original paper’s code and build up the test framework using the [Need for Speed](http://ci2cv.net/nfs/index.html)  benchmark and [VOT2014 benchmark]( http://www.votchallenge.net/vot2014/dataset.html). We then perform some profiling on the sequential implementation. The result shows that most of the cpu time is spent in the discrete fourier transform and the HOG feature extraction which is consistent to our intuition. However, as in the object tracking tasks, the bounding box of the target object is not very large and after using HOG feature which compress 4x4 cells into single feature descriptor, the dft computation is conducted on a quite small matrix. According to our measurement, the processing time for a single frame is about 8ms where dft time holds for 4-5ms. Since in object tracking task each frame’s computation depends on the result of the previous one, the dependency is pretty high. Therefore, we think this system is not very suitable for multithreading, since the overhead of spawning and synchronization would be larger than the actual computation. We actually tries to use the FFTW library to replace the opencv implementation for the code, the performance becomes worse. Therefore, the only parallelism we could benefit from would be using SIMD instructions. We think this project becomes something quite narrow and decide to switch the project. 
 
 # Original Proposal
-# C++ Parallel KCF Tracker
+## C++ Parallel KCF Tracker
 Team members:
 - Yuchen Huo (<yhuo1@andrew.cmu.edu>)
 - Danhao Guo (<danhaog@andrew.cmu.edu>)
 
-# Summary
+## Summary
 We are going to extend the Kernalized Correlation Filter (KCF) [1, 2], a fast object tracker, to the multicore platform.
 
-# Background
+## Background
 Visual Object Tracking is one of the popular tasks in the computer vision area. There are a lot of different implementations focusing on how to improve the accuracy of the tracking algorithm. These implementations mostly target at the "real time" online systems, which have been aimed at approximate frame rate of 30 Frames Per Second(FPS), enough for previous devices and workloads. However, for higher frame rate cameras (240 FPS) or an offline video processing pipeline, 30 FPS still seems to be slow. We look through some of the benchmark results [3, 4] and find this Kernalized Correlation Filter which provide top speed on CPU and pretty good accuracy. We decide to further extend this algorithm to be able to benefit from multicore systems and be fast enough to be used offline.
 
 By creating the circulant training data matrix, KCF uses Discrete Fourier Transform (DFT) to compute the close form solution of Ridge Regression and reduce both the storage and computation. It further uses HOG feature instead of raw pixels to gain better mean precision on the testing dataset. The remaining main computation lies in the dft and HOG feature extraction. There are plenty of fast parallel algorithms for dft and HOG feature extraction so we decide to build the parallel oject tracker based on the KCF implementation. 
 
 Fast Fourier Transforms (FFT) is an efficient way for calculation of DFT by utilizing DFT's symmetry properties. Compared with O(N^2) computation complexity, the computational cost of FFT is only O(N log(N)) It is a key tool in most of digital signal processing systems including object tracking ones. In the KCF object tracking algorithm, FFT is heavily used for learning and evaluation to achieve lower computational complexity. For example, by utilizing FFT operation, KRLS learning algorithm is improved from O(N^4) to only O(N^2 log(N)) for NxN 2D images.
 
-# Challenge
+## Challenge
 The biggest challenge is that we are not very familiar with the computer vision algorithm so it may take time for us to understand the implementation details of the KCF tracker. However, since we have the open source implementation, we may not need to understand every single lines in the code. Instead, we may identify the paralizable parts and do optimization on these parts.
 
 Although FFT brings out great improvement on performance, it is still computational intensive with O(n log(n)) complexity. According to the properties of FFT algorithm itself, we believe that there should be some computational independent tasks inside it such as the DFT calculation of even terms and odd terms in each iteration. So, it may benefit from parallel implementation on multi-threaded processing. To implement FFT in parallel, the major points is that multi-dimensional FFT is utilized. In this regard, analyzing computation independence becomes tough. Meanwhile, applying such complicated algorithm with parallel technologies especially AVX instructions are pretty hard. We plan to combine both AVX and OpenMP to support different level of parallelism for FFT.
@@ -26,10 +26,10 @@ For HOG feature extraction, there have already been a few multicore CPU and GPU 
 
 KCF has done a lot of optimization to reduce the computation which makes it the fastest cpu object tracker implementation, we are not sure that the remaining computation would still be enough to gain benefits from multithreading. This might be a problem. We would try to identify this as soon as possible.
 
-# Resources
+## Resources
 The Author of KCF open source their [code](https://github.com/joaofaro/KCFcpp) on the github so we are able to build our parallel version based on their implementation. OpenCV is an open source library for computer vision. It provides tons of functions for real-time computer vision. The [code](https://github.com/opencv/opencv) is available on GitHub. we could build our parallel FFT implementation based on the top of OpenCV's source code. We would develop and test our software on the GHC machines which have 8 cores and we may further test the performance on Xeon Phi machines or develop the GPU version to see how our implementation scales if everything goes smoothly.
 
-# Evaluation and Goals
+## Evaluation and Goals
 Since KCF tracker currently is a sequential implementation, we hope our parallel version could achieve close to linear speedup comparing to the sequential version. The basic performance measure would just be the speedup/ core number graph. However, as we haven't identified the dependency in the current implementation, we are not very sure if this is possible to achieve the linear speedup.
 
 We may try to use other libraries like FFTW to compare the performance to see if we have achieved a good enough parallel implementation. Opencv also have implemented the same object tracker, which we may use to perform the comparison.
@@ -40,7 +40,7 @@ Expected Goal: 1. The parallel FFT could achieve sub-linear scalability with the
 
 Stretch Goal: The parallel FFT could beat other excellent DFT calculation libraries, such as FFTW, in performance.
 
-# Reference
+## Reference
 [1] J. F. Henriques, R. Caseiro, P. Martins, J. Batista,   
 "High-Speed Tracking with Kernelized Correlation Filters", TPAMI 2015.
 
@@ -53,7 +53,7 @@ Stretch Goal: The parallel FFT could beat other excellent DFT calculation librar
 [4] Y. Wu and J. Lim and M. Yan,   
 "Online Object Tracking: A Benchmark", CVPR 2013
 
-# Schedule
+## Schedule
 Week 1 (Apr. 3rd): 
 
 Deciding project idea; 
