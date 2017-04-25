@@ -34,6 +34,12 @@ Exploring bottleneck of HMM for relative small state space. Generalizing HMM alg
 ## Platform choice:
 Multi-core CPU with SIMD intrinsics
 
+#Checkpoint Report:
+We spent quite a lot time in setting up the experiment environment for the original project idea, profiling and a few more days to seek a new project idea, so we are kind of left behind. By now, we have selected a sequential HMM implementation as our code base and built up the test cases for benchmarking. We have identified the data dependency in all of the three algorithms and we believe that they may benefit from optimized multithread vector-matrix multiplication with the help of AVX operations.
+
+Since it is a bit late in the whole schedule, we would try our best to catch up. We decide to implement the SIMD optimized version of all three algorithms by the end of this week. We shall spend one more week to implement multi-threaded version concerning data locality using OpenMP. Both of us have no more exams after 5/8, therefore we would work hard to explore the remaining possible optimization in the project and try to make it able to accelerate problems with different working set as different model size might need different parallel degree.
+
+
 ## Reference
 [1] Rabiner, Lawrence, and B. Juang.
 "An introduction to hidden Markov models." ieee assp magazine 3.1 (1986): 4-16.
