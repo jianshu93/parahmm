@@ -22,7 +22,7 @@ Markov model describes systems with randomly changes in which the future states 
 2. For HMM with large state space, the space needed for parameters are too large to be loaded into L1 cache at the same time. Implementing parallel HMM with friendly data locality is also a big factor of performance improvement.
 
 ## Resources:
-A multi-core machine to evaluate the performance.
+A sequential [implementation](https://github.com/chuan/chmm) of the HMM algorithms which also contains a cuda implementation.
 
 ## Our goals:
 80% Goal:
@@ -32,7 +32,7 @@ Implementing a multi-threaded HMM with SIMD intrinsics especially for large stat
 Exploring bottleneck of HMM for relative small state space. Generalizing HMM algorithm optimization with different strategies for different state space configuration. 
 
 ## Platform choice:
-Multi-core CPU with SIMD intrinsics
+We would develop and test our software on the GHC machines which have 8 cores and AVX2 support.
 
 # Checkpoint Report:
 We spent quite a lot time in setting up the experiment environment for the original project idea, profiling and a few more days to seek a new project idea, so we are kind of left behind. By now, we have selected a sequential HMM implementation as our code base and built up the test cases for benchmarking. We have identified the data dependency in all of the three algorithms and we believe that they may benefit from optimized multithread vector-matrix multiplication with the help of AVX operations.
