@@ -7,7 +7,7 @@ Team members:
 - Danhao Guo (<danhaog@andrew.cmu.edu>)
 
 # Summary
-We are going to extend the the Kernalized Correlation Filter (KCF) [1, 2], a fast oject tracker, to the multicore platform.
+We are going to extend the Kernalized Correlation Filter (KCF) [1, 2], a fast object tracker, to the multicore platform.
 
 # Background
 Visual Object Tracking is one of the popular tasks in the computer vision area. There are a lot of different implementations focusing on how to improve the accuracy of the tracking algorithm. These implementations mostly target at the "real time" online systems, which have been aimed at approximate frame rate of 30 Frames Per Second(FPS), enough for previous devices and workloads. However, for higher frame rate cameras (240 FPS) or an offline video processing pipeline, 30 FPS still seems to be slow. We look through some of the benchmark results [3, 4] and find this Kernalized Correlation Filter which provide top speed on CPU and pretty good accuracy. We decide to further extend this algorithm to be able to benefit from multicore systems and be fast enough to be used offline.
