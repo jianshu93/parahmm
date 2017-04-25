@@ -1,3 +1,5 @@
+# C++ Parallel Hidden Markov Model (HMM)
+
 Team members:
 - Yuchen Huo (<yhuo1@andrew.cmu.edu>)
 - Danhao Guo (<danhaog@andrew.cmu.edu>)
