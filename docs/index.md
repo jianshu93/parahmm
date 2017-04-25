@@ -39,6 +39,11 @@ We spent quite a lot time in setting up the experiment environment for the origi
 
 Since it is a bit late in the whole schedule, we would try our best to catch up. We decide to implement the SIMD optimized version of all three algorithms by the end of this week. We shall spend one more week to implement multi-threaded version concerning data locality using OpenMP. Both of us have no more exams after 5/8, therefore we would work hard and spend all of our time to explore the remaining possible optimization in the project and try to make it able to accelerate problems with different working set as different model size might need different parallel degree.
 
+## We plan to show several graphs on the competition
+* The AVX instruction speedup of all three algorithms.
+* The speed up of multicore HMM algorithms using different number of cores.
+* The speed up of our implementation on different working set size. 
+
 
 ## Reference
 [1] Rabiner, Lawrence, and B. Juang.
