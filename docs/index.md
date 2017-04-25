@@ -3,11 +3,33 @@ Our original project idea was to extend the Kernalized Correlation Filter (KCF),
 
 # New proposal
 ## Summary
-We are going to implement the parallel version of hidden Markov model (HMM) training and classification algorithm utilizing SMID and multithreading. HMM involves three basic problems: 
+We are going to implement the parallel version of hidden Markov model (HMM) training and classification algorithm utilizing SIMD and multithreading. HMM involves three basic problems: 
 1. Compute the probability of the observation sequence. (Forward / Backward Algorithm) 
-2. Compute the most probable hidden state sequence. (Viterbi Algorithm) 
+2. Decode the observations to find hidden state sequence with the most probablility. (Viterbi Algorithm) 
 3. Unsupervised training of hidden Markov mode parameters. (Baum-Welch Algorithm)
 
+## Background:
+Markov model describes systems with randomly changes in which the future states of the system only depend on the current state instead of the events before the current state. HMM assumes the observations are assumed to be the result (emission) of unobserved hidden states in a Markov model. HHM are especially used in the applications of pattern recognition such as text tagging, semantics analytics and speech recognition. 
+
+## Challenges:
+1. Identify performance bottleneck and analyze the feasibility of parallelism on the part is not that easy.
+2. Our focus is on HMM with large state space. In this regard, the space needed for parameters are too large to be loaded into L1 cache at the same time. Implementing parallel HMM with friendly data locality is also a big factor of performance improvement.
+
+## Resources:
+A multi-core machine to evaluate the performance.
+
+## Our goals:
+Minimum Goal:
+Implementing a multi-threaded HMM (including baum–Welch algorithm, forward algorithm, backward algorithm and viterbi algorithm)
+
+Expected Goal:
+Exploring data access pattern of the algorithm and implementing parallel HMM algorithms with data locality.
+
+Stretch Goal: 
+Accelerate HMM using SIMD intrinsics to further improve performance.
+
+## Platform choice:
+Multi-core CPU with SIMD intrinsics
 
 # Original Proposal
 ## C++ Parallel KCF Tracker
