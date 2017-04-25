@@ -1,15 +1,15 @@
-# C++ Parallel Hidden Markov Model (HMM)
+# C++ Parallel Hidden Markov Model
 
 Team members:
 - Yuchen Huo (<yhuo1@andrew.cmu.edu>)
 - Danhao Guo (<danhaog@andrew.cmu.edu>)
 
 # Middle Checkpoint
-Our original project idea was to extend the Kernalized Correlation Filter (KCF), a fast object tracker, to the multicore platform. We downloaded the original paper’s code and built up the test framework using the [Need for Speed benchmark](http://ci2cv.net/nfs/index.html)  and [VOT2014 benchmark]( http://www.votchallenge.net/vot2014/dataset.html). We then performed some profiling on the sequential implementation. The result shows that most of the cpu time is spent in the discrete fourier transform and the HOG feature extraction which is consistent to our intuition. However, as in the object tracking tasks, the bounding box of the target object is not very large and after using HOG feature which compress 4x4 cells into single feature descriptor, the dft computation is conducted on a quite small matrix. According to our measurement, the processing time for a single frame is about 8ms where dft time holds for 4-5ms. Since in object tracking task each frame’s computation depends on the result of the previous one, the dependency is pretty high. Therefore, we think this system is not very suitable for multithreading, since the overhead of spawning and synchronization would be larger than the actual computation. We actually tries to use the FFTW library to replace the opencv implementation for the code, the performance becomes worse. Therefore, the only parallelism we could benefit from would be using SIMD instructions. We think this project actually could not get much performance improvement from the multicore platform and seems to be quite narrow in opptimization approaches. We decided to switch the project. 
+Our original project idea was to extend the Kernalized Correlation Filter (KCF) [2, 3], a fast object tracker, to the multicore platform. We downloaded the original paper’s code and built up the test framework using the [Need for Speed benchmark](http://ci2cv.net/nfs/index.html)  and [VOT2014 benchmark]( http://www.votchallenge.net/vot2014/dataset.html). We then performed some profiling on the sequential implementation. The result shows that most of the cpu time is spent in the discrete fourier transform and the HOG feature extraction which is consistent to our intuition. However, as in the object tracking tasks, the bounding box of the target object is not very large and after using HOG feature which compress 4x4 cells into single feature descriptor, the dft computation is conducted on a quite small matrix. According to our measurement, the processing time for a single frame is about 8ms where dft time holds for 4-5ms. Since in object tracking task each frame’s computation depends on the result of the previous one, the dependency is pretty high. Therefore, we think this system is not very suitable for multithreading, since the overhead of spawning and synchronization would be larger than the actual computation. We actually tries to use the FFTW library to replace the opencv implementation for the code, the performance becomes worse. Therefore, the only parallelism we could benefit from would be using SIMD instructions. We think this project actually could not get much performance improvement from the multicore platform and seems to be quite narrow in opptimization approaches. We decided to switch the project. 
 
 # New proposal
 ## Summary
-We are going to implement the parallel version of hidden Markov model (HMM) training and classification algorithm utilizing SIMD and multithreading. HMM involves three basic problems: 
+We are going to implement the parallel version of hidden Markov model (HMM) [1] training and classification algorithm utilizing SIMD and multithreading. HMM involves three basic problems: 
 1. Compute the probability of the observation sequence. (Forward / Backward Algorithm) 
 2. Decode the observations to find hidden state sequence with the most probablility. (Viterbi Algorithm) 
 3. Unsupervised training of hidden Markov mode parameters. (Baum-Welch Algorithm)
@@ -34,14 +34,18 @@ Exploring bottleneck of HMM for relative small state space. Generalizing HMM alg
 ## Platform choice:
 Multi-core CPU with SIMD intrinsics
 
+## Reference
+[1] Rabiner, Lawrence, and B. Juang.
+"An introduction to hidden Markov models." ieee assp magazine 3.1 (1986): 4-16.
+
 # Original Proposal
 ## C++ Parallel KCF Tracker
 
 ## Summary
-We are going to extend the Kernalized Correlation Filter (KCF) [1, 2], a fast object tracker, to the multicore platform.
+We are going to extend the Kernalized Correlation Filter (KCF) [2, 3], a fast object tracker, to the multicore platform.
 
 ## Background
-Visual Object Tracking is one of the popular tasks in the computer vision area. There are a lot of different implementations focusing on how to improve the accuracy of the tracking algorithm. These implementations mostly target at the "real time" online systems, which have been aimed at approximate frame rate of 30 Frames Per Second(FPS), enough for previous devices and workloads. However, for higher frame rate cameras (240 FPS) or an offline video processing pipeline, 30 FPS still seems to be slow. We look through some of the benchmark results [3, 4] and find this Kernalized Correlation Filter which provide top speed on CPU and pretty good accuracy. We decide to further extend this algorithm to be able to benefit from multicore systems and be fast enough to be used offline.
+Visual Object Tracking is one of the popular tasks in the computer vision area. There are a lot of different implementations focusing on how to improve the accuracy of the tracking algorithm. These implementations mostly target at the "real time" online systems, which have been aimed at approximate frame rate of 30 Frames Per Second(FPS), enough for previous devices and workloads. However, for higher frame rate cameras (240 FPS) or an offline video processing pipeline, 30 FPS still seems to be slow. We look through some of the benchmark results [4, 5] and find this Kernalized Correlation Filter which provide top speed on CPU and pretty good accuracy. We decide to further extend this algorithm to be able to benefit from multicore systems and be fast enough to be used offline.
 
 By creating the circulant training data matrix, KCF uses Discrete Fourier Transform (DFT) to compute the close form solution of Ridge Regression and reduce both the storage and computation. It further uses HOG feature instead of raw pixels to gain better mean precision on the testing dataset. The remaining main computation lies in the dft and HOG feature extraction. There are plenty of fast parallel algorithms for dft and HOG feature extraction so we decide to build the parallel oject tracker based on the KCF implementation. 
 
@@ -71,16 +75,16 @@ Expected Goal: 1. The parallel FFT could achieve sub-linear scalability with the
 Stretch Goal: The parallel FFT could beat other excellent DFT calculation libraries, such as FFTW, in performance.
 
 ## Reference
-[1] J. F. Henriques, R. Caseiro, P. Martins, J. Batista,   
+[2] J. F. Henriques, R. Caseiro, P. Martins, J. Batista,   
 "High-Speed Tracking with Kernelized Correlation Filters", TPAMI 2015.
 
-[2] J. F. Henriques, R. Caseiro, P. Martins, J. Batista,   
+[3] J. F. Henriques, R. Caseiro, P. Martins, J. Batista,   
 "Exploiting the Circulant Structure of Tracking-by-detection with Kernels", ECCV 2012.
 
-[3] H. Kiani Galoogahi, A. Fagg, C. Huang, D. Ramanan, S.Lucey,   
+[4] H. Kiani Galoogahi, A. Fagg, C. Huang, D. Ramanan, S.Lucey,   
 "Need for Speed: A Benchmark for Higher Frame Rate Object Tracking", 2017, arXiv preprint arXiv:1703.05884.
 
-[4] Y. Wu and J. Lim and M. Yan,   
+[5] Y. Wu and J. Lim and M. Yan,   
 "Online Object Tracking: A Benchmark", CVPR 2013
 
 ## Schedule
