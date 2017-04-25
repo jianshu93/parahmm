@@ -23,8 +23,8 @@ Markov model describes systems with randomly changes in which the future states 
 A multi-core machine to evaluate the performance.
 
 ## Our goals:
-75% Goal:
-Implementing a multi-threaded HMM with SIMD intrinsics especially for large state space. (including baum–Welch algorithm, forward algorithm, backward algorithm and viterbi algorithm)
+80% Goal:
+Implementing a multi-threaded HMM with SIMD intrinsics especially for large state space which needs friendly data locality. (including baum–Welch algorithm, forward algorithm, backward algorithm and viterbi algorithm)
 
 100% Goal:
 Exploring bottleneck of HMM for relative small state space. Generalizing HMM algorithm optimization with different strategies for different state space configuration. 
