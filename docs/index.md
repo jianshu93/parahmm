@@ -1,4 +1,4 @@
-# C++ Parallel Hidden Markov Model
+# Parallel Hidden Markov Model
 
 Team members:
 - Yuchen Huo (<yhuo1@andrew.cmu.edu>)
