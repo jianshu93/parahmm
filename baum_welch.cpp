@@ -10,7 +10,6 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
     float *beta = (float *)malloc(len * nstates * sizeof(float));
 
     float loglik;
-
     for (int i = 0; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
             alpha[i*nstates + j] = - INFINITY;
@@ -22,8 +21,9 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
     for (int i = 0; i < nstates; i++) {
         alpha[i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
     }
-    
+
     for (int i = 1; i < len; i++) {
+#pragma omp parallel for
         for (int j = 0; j < nstates; j++) {
             for (int k = 0; k < nstates; k++) {
                 float p = alpha[(i-1) * nstates + k] + trans[IDXT(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
@@ -32,8 +32,19 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
         }
     }
     loglik = -INFINITY;
-    for (int i = 0; i < nstates; i++) {
-        loglik = logadd(loglik, alpha[(len-1) * nstates + i]);
+    int thread_num = omp_get_max_threads();
+#pragma omp parallel 
+    {
+        int tid = omp_get_thread_num();
+        float local_loglik = -INFINITY;
+#pragma omp for
+        for (int i = 0; i < nstates; i++) {
+            local_loglik = logadd(local_loglik, alpha[(len-1) * nstates + i]);
+        }
+#pragma omp critical
+        {
+            loglik = logadd(local_loglik, loglik);
+        }
     }
 
     /* backward pass & update counts */
@@ -41,6 +52,7 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
         beta[(len-1) * nstates + i] = 0;         /* 0 = log (1.0) */
     }
     for (int i = 1; i < len; i++) {
+#pragma omp parallel for
         for (int j = 0; j < nstates; j++) {
 
             float e = alpha[(len-i) * nstates + j] + beta[(len-i) * nstates + j] - loglik;
@@ -57,9 +69,23 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
         }
     }
     float p = -INFINITY;
-    for (int i = 0; i < nstates; i++) {
-        p = logadd(p, prior[i] + beta[i] + obvs[IDX(i,data[0],nobvs)]);
 
+#pragma omp parallel 
+    {
+        int tid = omp_get_thread_num();
+        float local_p = -INFINITY;
+#pragma omp for
+        for (int i = 0; i < nstates; i++) {
+            local_p = logadd(local_p, prior[i] + beta[i] + obvs[IDX(i,data[0],nobvs)]);
+        }
+#pragma omp critical
+        {
+            p = logadd(local_p, p);
+        }
+    }
+
+#pragma omp parallel for
+    for (int i = 0; i < nstates; i++) {
         float e = alpha[i] + beta[i] - loglik;
         gmm[IDX(i,data[0],nobvs)] = logadd(gmm[IDX(i,data[0],nobvs)], e);
 
@@ -120,36 +146,51 @@ void baum_welch(int *data, int nseq, int iterations, int length, int nstates, in
 
 void update_prob(int nstates, int nobvs, float *prior, float *trans, float *obvs) {
     float pisum = - INFINITY;
+    int thread_num = omp_get_max_threads();
     float gmmsum[nstates];
     float xisum[nstates];
-    size_t i, j;
+    //size_t i, j;
 
-    for (i = 0; i < nstates; i++) {
+    for (int i = 0; i < nstates; i++) {
         gmmsum[i] = - INFINITY;
         xisum[i] = - INFINITY;
 
-        pisum = logadd(pi[i], pisum);
+        pisum  = logadd(pisum, pi[i]);
     }
 
-    for (i = 0; i < nstates; i++) {
+//#pragma omp parallel 
+//    {
+//        int tid = omp_get_thread_num();
+//        float local_pisum = -INFINITY;
+//        for (int i = tid; i < nstates; i+=thread_num) {
+//            local_pisum = logadd(local_pisum, pi[i]);
+//        }
+//#pragma omp critical
+//        {
+//            pisum = logadd(local_pisum, pisum);
+//        }
+//    }
+
+    for (int i = 0; i < nstates; i++) {
         prior[i] = pi[i] - pisum;
     }
 
-    for (i = 0; i < nstates; i++) {
-        for (j = 0; j < nstates; j++) {
+    #pragma omp parallel for
+    for (int i = 0; i < nstates; i++) {
+        for (int j = 0; j < nstates; j++) {
             xisum[i] = logadd(xisum[i], xi[IDX(i,j,nstates)]);
         }
-        for (j = 0; j < nobvs; j++) {
+        for (int j = 0; j < nobvs; j++) {
             gmmsum[i] = logadd(gmmsum[i], gmm[IDX(i,j,nobvs)]);
         }
     }
 
     /* May need to blocking!!!*/
-    for (i = 0; i < nstates; i++) {
-        for (j = 0; j < nstates; j++) {
+    for (int i = 0; i < nstates; i++) {
+        for (int j = 0; j < nstates; j++) {
             trans[IDXT(i,j,nstates)] = xi[IDX(i,j,nstates)] - xisum[i];
         }
-        for (j = 0; j < nobvs; j++) {
+        for (int j = 0; j < nobvs; j++) {
             obvs[IDX(i,j,nobvs)] = gmm[IDX(i,j,nobvs)] - gmmsum[i];
         }
     }

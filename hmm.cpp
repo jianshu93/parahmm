@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     float p;
     int i, j, k;
     opterr = 0;
-
+    
 
     while ((c = getopt(argc, argv, "c:n:hp:t:")) != -1) {
         switch (c) {
