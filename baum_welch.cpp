@@ -81,6 +81,7 @@ void baum_welch(int *data, int nseq, int iterations, int length, int nstates, in
     double *loglik = (double *) malloc(sizeof(double) * nseq);
     if (loglik == NULL) handle_error("malloc");
     for (int i = 0; i < iterations; i++) {
+        double startTime = CycleTimer::currentSeconds();
         init_count();
         for (int j = 0; j < nseq; j++) {
             loglik[j] = forward_backward(data + length * j, length, nstates, nobvs, prior, trans, obvs);
@@ -91,26 +92,28 @@ void baum_welch(int *data, int nseq, int iterations, int length, int nstates, in
 
         printf("iteration %d log-likelihood: %.4lf\n", i + 1, p);
         printf("updated parameters:\n");
-        printf("# initial state probability\n");
-        for (int j = 0; j < nstates; j++) {
-            printf(" %.4f", exp(prior[j]));
-        }
-        printf("\n");
-        printf("# state transition probability\n");
-        for (int j = 0; j < nstates; j++) {
-            for (int k = 0; k < nstates; k++) {
-                printf(" %.4f", exp(trans[IDX(j,k,nstates)]));
-            }
-            printf("\n");
-        }
-        printf("# state output probility\n");
-        for (int j = 0; j < nstates; j++) {
-            for (int k = 0; k < nobvs; k++) {
-                printf(" %.4f", exp(obvs[IDX(j,k,nobvs)]));
-            }
-            printf("\n");
-        }
-        printf("\n");
+        //printf("# initial state probability\n");
+        //for (int j = 0; j < nstates; j++) {
+        //    printf(" %.4f", exp(prior[j]));
+        //}
+        //printf("\n");
+        //printf("# state transition probability\n");
+        //for (int j = 0; j < nstates; j++) {
+        //    for (int k = 0; k < nstates; k++) {
+        //        printf(" %.4f", exp(trans[IDX(j,k,nstates)]));
+        //    }
+        //    printf("\n");
+        //}
+        //printf("# state output probility\n");
+        //for (int j = 0; j < nstates; j++) {
+        //    for (int k = 0; k < nobvs; k++) {
+        //        printf(" %.4f", exp(obvs[IDX(j,k,nobvs)]));
+        //    }
+        //    printf("\n");
+        //}
+        //printf("\n");
+        double endTime = CycleTimer::currentSeconds();
+        printf("Time taken %.4f milliseconds\n",  (endTime - startTime) * 1000);
     }
     free(loglik);
 }

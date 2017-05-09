@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <omp.h>
-#include <time.h>
+#include "CycleTimer.h"
 #include "hmm.h"
 #include "forward.cpp"
 #include "viterbi.cpp"

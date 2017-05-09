@@ -13,7 +13,7 @@ void viterbi(int *data, int len, int nstates,int nobvs, double *prior, double *t
         }
     }
 
-    clock_t start = clock(), diff;
+    double startTime = CycleTimer::currentSeconds();
     for (int i = 0; i < nstates; i++) {
         lambda[i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
         backtrace[i] = -1;       /* -1 is starting point */
@@ -46,9 +46,8 @@ void viterbi(int *data, int len, int nstates,int nobvs, double *prior, double *t
         printf("%d ", stack[i]);
     }
     printf("\n");
-    diff = clock() - start;
-    int msec = diff * 1000 / CLOCKS_PER_SEC;
-    printf("Time taken %d milliseconds\n",  msec);
+    double endTime = CycleTimer::currentSeconds();
+    printf("Time taken %0.4f milliseconds\n",  (endTime - startTime) * 1000);
 
     free(lambda);
     free(backtrace);

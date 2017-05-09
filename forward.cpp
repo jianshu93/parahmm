@@ -17,6 +17,7 @@ double forward(int *data, int len, int nstates, int nobvs,
         }
     }
 
+    double startTime = CycleTimer::currentSeconds();
     /* forward pass */
     for (int i = 0; i < nstates; i++) {
         alpha[i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
@@ -34,6 +35,8 @@ double forward(int *data, int len, int nstates, int nobvs,
     for (int i = 0; i < nstates; i++) {
         loglik = logadd(loglik, alpha[(len-1) * nstates + i]);
     }
+    double endTime = CycleTimer::currentSeconds();
+    printf("Time taken %.4f milliseconds\n",  (endTime - startTime) * 1000);
 
     return loglik;
 }
