@@ -1,14 +1,14 @@
 /* forward algoritm: return observation likelihood */
-double forward(int *data, int len, int nstates, int nobvs,
-        double *prior, double * trans, double *obvs)
+float forward(int *data, int len, int nstates, int nobvs,
+        float *prior, float * trans, float *obvs)
 {
     /* construct trellis */
-    // double alpha[len][nstates];
-    // double beta[len][nstates];
-    double *alpha = (double *)malloc(len * nstates * sizeof(double));
-    double *beta = (double *)malloc(len * nstates * sizeof(double));
+    // float alpha[len][nstates];
+    // float beta[len][nstates];
+    float *alpha = (float *)malloc(len * nstates * sizeof(float));
+    float *beta = (float *)malloc(len * nstates * sizeof(float));
 
-    double loglik;
+    float loglik;
 
     for (int i = 0; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
@@ -30,7 +30,7 @@ double forward(int *data, int len, int nstates, int nobvs,
             #pragma omp for schedule(static)
             for (int j = 0; j < nstates; j++) {
                 for (int k = 0; k < nstates; k++) {
-                    double p = alpha[(i-1) * nstates + k] + trans[IDX(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
+                    float p = alpha[(i-1) * nstates + k] + trans[IDX(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
                     alpha[i * nstates + j] = logadd(alpha[i * nstates + j], p);
                 }
             }

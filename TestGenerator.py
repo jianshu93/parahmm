@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
 	fd.write("# initial state probability\n")
 	prior = np.random.dirichlet(np.ones(hstate),size=1)[0].tolist()
-	fd.write(' '.join("%f" % a for a in prior)+"\n")
+	fd.write(' '.join(str(a) for a in prior)+"\n")
 	
 	prefix_prior = prefix_sum(prior)
 	
@@ -42,14 +42,14 @@ if __name__ == "__main__":
 	transit_sum = []
 	for i in range(hstate):
 		transit = np.random.dirichlet(np.ones(hstate),size=1)[0].tolist()
-		fd.write(' '.join("%f" % a for a in transit)+"\n")
+		fd.write(' '.join(str(a) for a in transit)+"\n")
 		transit_sum.append(prefix_sum(transit))
 
 	fd.write("\n# state output probability\n")
 	emit_sum = []
 	for i in range(hstate):
 		emit = np.random.dirichlet(np.ones(ostate),size=1)[0].tolist()
-		fd.write(' '.join("%f" % a for a in emit)+"\n")
+		fd.write(' '.join(str(a) for a in emit)+"\n")
 		emit_sum.append(prefix_sum(emit))
 	fd.write("\n# data size\n")
 	fd.write("%d %d\n" % (seq_number, seq_length))

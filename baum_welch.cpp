@@ -1,15 +1,15 @@
-double *gmm = NULL;             /* gamma */
-double *xi = NULL;              /* xi */
-double *pi = NULL;              /* pi */
+float *gmm = NULL;             /* gamma */
+float *xi = NULL;              /* xi */
+float *pi = NULL;              /* pi */
 
 /* forward backward algoritm: return observation likelihood */
-double forward_backward(int *data, int len, int nstates, int nobvs, double *prior, double *trans, double *obvs)
+float forward_backward(int *data, int len, int nstates, int nobvs, float *prior, float *trans, float *obvs)
 {
     /* construct trellis */
-    double *alpha = (double *)malloc(len * nstates * sizeof(double));
-    double *beta = (double *)malloc(len * nstates * sizeof(double));
+    float *alpha = (float *)malloc(len * nstates * sizeof(float));
+    float *beta = (float *)malloc(len * nstates * sizeof(float));
 
-    double loglik;
+    float loglik;
 
     for (int i = 0; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
@@ -26,7 +26,7 @@ double forward_backward(int *data, int len, int nstates, int nobvs, double *prio
     for (int i = 1; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
             for (int k = 0; k < nstates; k++) {
-                double p = alpha[(i-1) * nstates + k] + trans[IDX(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
+                float p = alpha[(i-1) * nstates + k] + trans[IDX(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
                 alpha[i * nstates + j] = logadd(alpha[i * nstates + j], p);
             }
         }
@@ -43,11 +43,11 @@ double forward_backward(int *data, int len, int nstates, int nobvs, double *prio
     for (int i = 1; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
 
-            double e = alpha[(len-i) * nstates + j] + beta[(len-i) * nstates + j] - loglik;
+            float e = alpha[(len-i) * nstates + j] + beta[(len-i) * nstates + j] - loglik;
             gmm[IDX(j,data[len-i],nobvs)] = logadd(gmm[IDX(j,data[len-i],nobvs)], e);
 
             for (int k = 0; k < nstates; k++) {
-                double p = beta[(len-i) * nstates + k] + trans[IDX(j,k,nstates)] + obvs[IDX(k,data[len-i],nobvs)];
+                float p = beta[(len-i) * nstates + k] + trans[IDX(j,k,nstates)] + obvs[IDX(k,data[len-i],nobvs)];
                 beta[(len-1-i) * nstates + j] = logadd(beta[(len-1-i) * nstates + j], p);
 
                 e = alpha[(len-1-i) * nstates + j] + beta[(len-i) * nstates + k]
@@ -56,11 +56,11 @@ double forward_backward(int *data, int len, int nstates, int nobvs, double *prio
             }
         }
     }
-    double p = -INFINITY;
+    float p = -INFINITY;
     for (int i = 0; i < nstates; i++) {
         p = logadd(p, prior[i] + beta[i] + obvs[IDX(i,data[0],nobvs)]);
 
-        double e = alpha[i] + beta[i] - loglik;
+        float e = alpha[i] + beta[i] - loglik;
         gmm[IDX(i,data[0],nobvs)] = logadd(gmm[IDX(i,data[0],nobvs)], e);
 
         pi[i] = logadd(pi[i], e);
@@ -76,9 +76,9 @@ double forward_backward(int *data, int len, int nstates, int nobvs, double *prio
     return loglik;
 }
 
-void baum_welch(int *data, int nseq, int iterations, int length, int nstates, int nobvs, double *prior, double *trans, double *obvs)
+void baum_welch(int *data, int nseq, int iterations, int length, int nstates, int nobvs, float *prior, float *trans, float *obvs)
 {
-    double *loglik = (double *) malloc(sizeof(double) * nseq);
+    float *loglik = (float *) malloc(sizeof(float) * nseq);
     if (loglik == NULL) handle_error("malloc");
     for (int i = 0; i < iterations; i++) {
         double startTime = CycleTimer::currentSeconds();
@@ -86,7 +86,7 @@ void baum_welch(int *data, int nseq, int iterations, int length, int nstates, in
         for (int j = 0; j < nseq; j++) {
             loglik[j] = forward_backward(data + length * j, length, nstates, nobvs, prior, trans, obvs);
         }
-        double p = sum(loglik, nseq);
+        float p = sum(loglik, nseq);
 
         update_prob();
 

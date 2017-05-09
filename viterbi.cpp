@@ -1,11 +1,11 @@
 /* find the most probable sequence */
-void viterbi(int *data, int len, int nstates,int nobvs, double *prior, double *trans, double *obvs)
+void viterbi(int *data, int len, int nstates,int nobvs, float *prior, float *trans, float *obvs)
 {
-    double *lambda = (double *)malloc(len * nstates * sizeof(double));
+    float *lambda = (float *)malloc(len * nstates * sizeof(float));
     int *backtrace = (int *)malloc(len * nstates * sizeof(int));
     int *stack = (int *)malloc(len * sizeof(int));
 
-    double p;
+    float p;
 
     for (int i = 0; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
