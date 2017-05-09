@@ -1,11 +1,9 @@
 /* find the most probable sequence */
 void viterbi(int *data, int len, int nstates,int nobvs, float *prior, float *trans, float *obvs)
 {
-    float *lambda = (float *)malloc(len * nstates * sizeof(float));
+    float *lambda = (float *)aligned_alloc(32, len * nstates * sizeof(float));
     int *backtrace = (int *)malloc(len * nstates * sizeof(int));
     int *stack = (int *)malloc(len * sizeof(int));
-
-    float p;
 
     for (int i = 0; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
@@ -18,19 +16,31 @@ void viterbi(int *data, int len, int nstates,int nobvs, float *prior, float *tra
         lambda[i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
         backtrace[i] = -1;       /* -1 is starting point */
     }
+    
+    __m256 lambda_AVX, trans_AVX, obvs_AVX;
+    __m256 result; 
+
     for (int i = 1; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
-            for (int k = 0; k < nstates; k++) {
-                p = lambda[(i-1) * nstates + k] + trans[IDXT(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
-                if (p > lambda[i * nstates + j]) {
-                    lambda[i * nstates + j] = p;
-                    backtrace[i * nstates + j] = k;
+            obvs_AVX = _mm256_set1_ps(obvs[IDX(j,data[i],nobvs)]);
+            for (int k = 0; k < nstates; k+=8) {
+                lambda_AVX = _mm256_load_ps(lambda + (i-1) * nstates + k);
+                trans_AVX = _mm256_load_ps(trans + j * nstates + k);
+                result = _mm256_add_ps(lambda_AVX, trans_AVX);
+                result = _mm256_add_ps(result, obvs_AVX);
+                float* p = (float*)&result;
+                for (int m = 0; m < 8; m++) {
+                    if (p[m] > lambda[i * nstates + j]) {
+                        lambda[i * nstates + j] = p[m];
+                        backtrace[i * nstates + j] = k+m;
+                    }
                 }
             }
         }
     }
 
     int k = 0;
+    float p = 0;
     /* backtrace */
     for (int i = 0; i < nstates; i++) {
         if (i == 0 || lambda[(len-1) * nstates + i] > p) {
