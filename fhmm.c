@@ -444,9 +444,13 @@ void viterbi(int *data, size_t len)
     }
 
     for (i = 0; i < nstates; i++) {
+        printf("%f ", obvs[IDX(i,data[0],nobvs)]);
         lambda[0][i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
+        printf("%f ", lambda[0][i]);
         backtrace[0][i] = -1;       /* -1 is starting point */
     }
+    printf("\n");
+
     for (i = 1; i < len; i++) {
         for (j = 0; j < nstates; j++) {
             for (k = 0; k < nstates; k++) {
@@ -456,7 +460,11 @@ void viterbi(int *data, size_t len)
                     backtrace[i][j] = k;
                 }
             }
+            printf("%f ", lambda[i][j]);
+            printf("%d ", backtrace[i][j]);
         }
+        printf("\n");
+        return;
     }
 
     /* backtrace */

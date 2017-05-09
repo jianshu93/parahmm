@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <omp.h>
+#include <immintrin.h>
 #include "CycleTimer.h"
 #include "hmm.h"
 #include "forward.cpp"
@@ -47,6 +48,7 @@ float *prior = NULL;           /* initial state probabilities */
 float *trans = NULL;           /* state transition probabilities */
 float *transT = NULL;           /* state transition probabilities */
 float *obvs = NULL;            /* output probabilities */
+float *obvsT = NULL;            /* output probabilities */
 int *data = NULL;
 
 int main(int argc, char *argv[])
@@ -120,20 +122,20 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
 
-            prior = (float *) malloc(sizeof(float) * nstates);
-            if (prior == NULL) handle_error("malloc");
+            prior = (float *) aligned_alloc(32, sizeof(float) * nstates);
+            if (prior == NULL) handle_error("aligned_alloc");
 
-            trans = (float *) malloc(sizeof(float) * nstates * nstates);
-            if (trans == NULL) handle_error("malloc");
+            trans = (float *) aligned_alloc(32, sizeof(float) * nstates * nstates);
+            if (trans == NULL) handle_error("aligned_alloc");
 
-            transT = (float *) malloc(sizeof(float) * nstates * nstates);
-            if (transT == NULL) handle_error("malloc");
+            transT = (float *) aligned_alloc(32, sizeof(float) * nstates * nstates);
+            if (transT == NULL) handle_error("aligned_alloc");
 
-            xi = (float *) malloc(sizeof(float) * nstates * nstates);
-            if (xi == NULL) handle_error("malloc");
+            xi = (float *) aligned_alloc(32, sizeof(float) * nstates * nstates);
+            if (xi == NULL) handle_error("aligned_alloc");
 
-            pi = (float *) malloc(sizeof(float) * nstates);
-            if (pi == NULL) handle_error("malloc");
+            pi = (float *) aligned_alloc(32, sizeof(float) * nstates);
+            if (pi == NULL) handle_error("aligned_alloc");
 
         } else if (i == 1) {
             if (sscanf(linebuf, "%d", &nobvs) != 1) {
@@ -142,11 +144,14 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
 
-            obvs = (float *) malloc(sizeof(float) * nstates * nobvs);
-            if (obvs == NULL) handle_error("malloc");
+            obvs = (float *) aligned_alloc(32, sizeof(float) * nstates * nobvs);
+            if (obvs == NULL) handle_error("aligned_alloc");
 
-            gmm = (float *) malloc(sizeof(float) * nstates * nobvs);
-            if (gmm == NULL) handle_error("malloc");
+            obvsT = (float *) aligned_alloc(32, sizeof(float) * nstates * nobvs);
+            if (obvsT == NULL) handle_error("aligned_alloc");
+
+            gmm = (float *) aligned_alloc(32, sizeof(float) * nstates * nobvs);
+            if (gmm == NULL) handle_error("aligned_alloc");
 
         } else if (i == 2) {
             /* read initial state probabilities */ 
@@ -187,6 +192,7 @@ int main(int argc, char *argv[])
                     exit(EXIT_FAILURE);
                 }
                 obvs[IDX((i - 3 - nstates),j,nobvs)] = logf(d);
+                obvsT[IDXT((i - 3 - nstates),j,nstates)] = logf(d);
             }
             fclose(bin);
         } else if (i == 3 + nstates * 2) {
@@ -195,8 +201,8 @@ int main(int argc, char *argv[])
                 freeall();
                 exit(EXIT_FAILURE);
             }
-            data = (int *) malloc (sizeof(int) * nseq * length);
-            if (data == NULL) handle_error("malloc");
+            data = (int *) aligned_alloc (32, sizeof(int) * nseq * length);
+            if (data == NULL) handle_error("aligned_alloc");
         } else if (i <= 3 + nstates * 2 + nseq) {
             /* read data */
             bin = fmemopen(linebuf, buflen, "r");
@@ -227,7 +233,7 @@ int main(int argc, char *argv[])
         baum_welch(data, nseq, iterations, length, nstates, nobvs, prior, transT, obvs);
     } else if (mode == 2) {
         for (i = 0; i < nseq; i++) {
-            viterbi(data + length * i, length, nstates, nobvs, prior, transT, obvs);
+            viterbi(data + length * i, length, nstates, nobvs, prior, trans, obvsT);
         }
     } else if (mode == 1) {
         loglik = (float *) malloc(sizeof(float) * nseq);

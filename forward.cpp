@@ -5,8 +5,8 @@ float forward(int *data, int len, int nstates, int nobvs,
     /* construct trellis */
     // float alpha[len][nstates];
     // float beta[len][nstates];
-    float *alpha = (float *)malloc(len * nstates * sizeof(float));
-    float *beta = (float *)malloc(len * nstates * sizeof(float));
+    float *alpha = (float *)aligned_alloc(32, len * nstates * sizeof(float));
+    float *beta = (float *)aligned_alloc(32, len * nstates * sizeof(float));
 
     float loglik;
 
@@ -29,7 +29,13 @@ float forward(int *data, int len, int nstates, int nobvs,
 
         for (int i = 1; i < len; i++) {
             #pragma omp for
-            for (int j = 0; j < nstates; j++) {
+            //for (int j = 0; j < nstates; j++) {
+            //    for (int k = 0; k < nstates; k++) {
+            //        float p = alpha[(i-1) * nstates + k] + trans[IDXT(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
+            //        alpha[i * nstates + j] = logadd(alpha[i * nstates + j], p);
+            //    }
+            //}
+            for (int j = 0; j < nstates; j+=8) {
                 for (int k = 0; k < nstates; k++) {
                     float p = alpha[(i-1) * nstates + k] + trans[IDXT(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
                     alpha[i * nstates + j] = logadd(alpha[i * nstates + j], p);
