@@ -36,5 +36,8 @@
 ehthumbs.db
 Thumbs.db
 
-# vim staff
-.swp
+#####################
+test*
+*.swp
+fhmm
+hmm

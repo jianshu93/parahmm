@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <omp.h>
-#include <time.h>
+#include "CycleTimer.h"
 #include "hmm.h"
 #include "forward.cpp"
 #include "viterbi.cpp"
@@ -43,9 +43,9 @@ int nstates = 0;                /* number of states */
 int nobvs = 0;                  /* number of observations */
 int nseq = 0;                   /* number of data sequences  */
 int length = 0;                 /* data sequencel length */
-double *prior = NULL;           /* initial state probabilities */
-double *trans = NULL;           /* state transition probabilities */
-double *obvs = NULL;            /* output probabilities */
+float *prior = NULL;           /* initial state probabilities */
+float *trans = NULL;           /* state transition probabilities */
+float *obvs = NULL;            /* output probabilities */
 int *data = NULL;
 
 int main(int argc, char *argv[])
@@ -61,9 +61,9 @@ int main(int argc, char *argv[])
     int threadnum;
 
     int c;
-    double d;
-    double *loglik;
-    double p;
+    float d;
+    float *loglik;
+    float p;
     int i, j, k;
     opterr = 0;
 
@@ -119,16 +119,16 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
 
-            prior = (double *) malloc(sizeof(double) * nstates);
+            prior = (float *) malloc(sizeof(float) * nstates);
             if (prior == NULL) handle_error("malloc");
 
-            trans = (double *) malloc(sizeof(double) * nstates * nstates);
+            trans = (float *) malloc(sizeof(float) * nstates * nstates);
             if (trans == NULL) handle_error("malloc");
 
-            xi = (double *) malloc(sizeof(double) * nstates * nstates);
+            xi = (float *) malloc(sizeof(float) * nstates * nstates);
             if (xi == NULL) handle_error("malloc");
 
-            pi = (double *) malloc(sizeof(double) * nstates);
+            pi = (float *) malloc(sizeof(float) * nstates);
             if (pi == NULL) handle_error("malloc");
 
         } else if (i == 1) {
@@ -138,10 +138,10 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
 
-            obvs = (double *) malloc(sizeof(double) * nstates * nobvs);
+            obvs = (float *) malloc(sizeof(float) * nstates * nobvs);
             if (obvs == NULL) handle_error("malloc");
 
-            gmm = (double *) malloc(sizeof(double) * nstates * nobvs);
+            gmm = (float *) malloc(sizeof(float) * nstates * nobvs);
             if (gmm == NULL) handle_error("malloc");
 
         } else if (i == 2) {
@@ -149,12 +149,12 @@ int main(int argc, char *argv[])
             bin = fmemopen(linebuf, buflen, "r");
             if (bin == NULL) handle_error("fmemopen");
             for (j = 0; j < nstates; j++) {
-                if (fscanf(bin, "%lf", &d) != 1) {
+                if (fscanf(bin, "%f", &d) != 1) {
                     fprintf(stderr, "config file format error: %d\n", i);
                     freeall();
                     exit(EXIT_FAILURE);
                 }
-                prior[j] = log(d);
+                prior[j] = logf(d);
             }
             fclose(bin);
 
@@ -163,12 +163,12 @@ int main(int argc, char *argv[])
             bin = fmemopen(linebuf, buflen, "r");
             if (bin == NULL) handle_error("fmemopen");
             for (j = 0; j < nstates; j++) {
-                if (fscanf(bin, "%lf", &d) != 1) {
+                if (fscanf(bin, "%f", &d) != 1) {
                     fprintf(stderr, "config file format error: %d\n", i);
                     freeall();
                     exit(EXIT_FAILURE);
                 }
-                trans[IDX((i - 3),j, nstates)] = log(d);
+                trans[IDX((i - 3),j, nstates)] = logf(d);
             }
             fclose(bin);
         } else if (i <= 2 + nstates * 2) {
@@ -176,12 +176,12 @@ int main(int argc, char *argv[])
             bin = fmemopen(linebuf, buflen, "r");
             if (bin == NULL) handle_error("fmemopen");
             for (j = 0; j < nobvs; j++) {
-                if (fscanf(bin, "%lf", &d) != 1) {
+                if (fscanf(bin, "%f", &d) != 1) {
                     fprintf(stderr, "config file format error: %d\n", i);
                     freeall();
                     exit(EXIT_FAILURE);
                 }
-                obvs[IDX((i - 3 - nstates),j,nobvs)] = log(d);
+                obvs[IDX((i - 3 - nstates),j,nobvs)] = logf(d);
             }
             fclose(bin);
         } else if (i == 3 + nstates * 2) {
@@ -225,15 +225,15 @@ int main(int argc, char *argv[])
             viterbi(data + length * i, length, nstates, nobvs, prior, trans, obvs);
         }
     } else if (mode == 1) {
-        loglik = (double *) malloc(sizeof(double) * nseq);
+        loglik = (float *) malloc(sizeof(float) * nseq);
         if (loglik == NULL) handle_error("malloc");
         for (i = 0; i < nseq; i++) {
             loglik[i] = forward(data + length * i, length, nstates, nobvs, prior, trans, obvs);
         }
         p = sum(loglik, nseq);
         for (i = 0; i < nseq; i++)
-            printf("%.4lf\n", loglik[i]);
-        printf("total: %.4lf\n", p);
+            printf("%.4f\n", loglik[i]);
+        printf("total: %.4f\n", p);
         free(loglik);
     }
 
@@ -242,12 +242,12 @@ int main(int argc, char *argv[])
 }
 
 /* compute sum of the array using Kahan summation algorithm */
-double sum(double *data, int size)
+float sum(float *data, int size)
 {
-    double sum = data[0];
+    float sum = data[0];
     int i;
-    double y, t;
-    double c = 0.0;
+    float y, t;
+    float c = 0.0;
     for (i = 1; i < size; i++) {
         y = data[i] - c;
         t = sum + y;
@@ -271,9 +271,9 @@ void init_count() {
 }
 
 void update_prob() {
-    double pisum = - INFINITY;
-    double gmmsum[nstates];
-    double xisum[nstates];
+    float pisum = - INFINITY;
+    float gmmsum[nstates];
+    float xisum[nstates];
     size_t i, j;
 
     for (i = 0; i < nstates; i++) {
@@ -306,11 +306,11 @@ void update_prob() {
     }
 }
 
-double logadd(double x, double y) {
+float logadd(float x, float y) {
     if (y <= x)
-        return x + log1p(exp(y - x));
+        return x + log1pf(expf(y - x));
     else
-        return y + log1p(exp(x - y));
+        return y + log1pf(expf(x - y));
 }
 
 void usage() {

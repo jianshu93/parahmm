@@ -1,11 +1,11 @@
 /* find the most probable sequence */
-void viterbi(int *data, int len, int nstates,int nobvs, double *prior, double *trans, double *obvs)
+void viterbi(int *data, int len, int nstates,int nobvs, float *prior, float *trans, float *obvs)
 {
-    double *lambda = (double *)malloc(len * nstates * sizeof(double));
+    float *lambda = (float *)malloc(len * nstates * sizeof(float));
     int *backtrace = (int *)malloc(len * nstates * sizeof(int));
     int *stack = (int *)malloc(len * sizeof(int));
 
-    double p;
+    float p;
 
     for (int i = 0; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
@@ -13,7 +13,7 @@ void viterbi(int *data, int len, int nstates,int nobvs, double *prior, double *t
         }
     }
 
-    clock_t start = clock(), diff;
+    double startTime = CycleTimer::currentSeconds();
     for (int i = 0; i < nstates; i++) {
         lambda[i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
         backtrace[i] = -1;       /* -1 is starting point */
@@ -46,9 +46,8 @@ void viterbi(int *data, int len, int nstates,int nobvs, double *prior, double *t
         printf("%d ", stack[i]);
     }
     printf("\n");
-    diff = clock() - start;
-    int msec = diff * 1000 / CLOCKS_PER_SEC;
-    printf("Time taken %d milliseconds\n",  msec);
+    double endTime = CycleTimer::currentSeconds();
+    printf("Time taken %0.4f milliseconds\n",  (endTime - startTime) * 1000);
 
     free(lambda);
     free(backtrace);
