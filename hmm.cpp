@@ -48,6 +48,7 @@ float *prior = NULL;           /* initial state probabilities */
 float *trans = NULL;           /* state transition probabilities */
 float *transT = NULL;           /* state transition probabilities */
 float *obvs = NULL;            /* output probabilities */
+float *obvsT = NULL;            /* output probabilities */
 int *data = NULL;
 
 int main(int argc, char *argv[])
@@ -146,6 +147,9 @@ int main(int argc, char *argv[])
             obvs = (float *) aligned_alloc(32, sizeof(float) * nstates * nobvs);
             if (obvs == NULL) handle_error("aligned_alloc");
 
+            obvsT = (float *) aligned_alloc(32, sizeof(float) * nstates * nobvs);
+            if (obvsT == NULL) handle_error("aligned_alloc");
+
             gmm = (float *) aligned_alloc(32, sizeof(float) * nstates * nobvs);
             if (gmm == NULL) handle_error("aligned_alloc");
 
@@ -188,6 +192,7 @@ int main(int argc, char *argv[])
                     exit(EXIT_FAILURE);
                 }
                 obvs[IDX((i - 3 - nstates),j,nobvs)] = logf(d);
+                obvsT[IDXT((i - 3 - nstates),j,nstates)] = logf(d);
             }
             fclose(bin);
         } else if (i == 3 + nstates * 2) {
@@ -228,7 +233,7 @@ int main(int argc, char *argv[])
         baum_welch(data, nseq, iterations, length, nstates, nobvs, prior, transT, obvs);
     } else if (mode == 2) {
         for (i = 0; i < nseq; i++) {
-            viterbi(data + length * i, length, nstates, nobvs, prior, transT, obvs);
+            viterbi(data + length * i, length, nstates, nobvs, prior, trans, obvsT);
         }
     } else if (mode == 1) {
         loglik = (float *) malloc(sizeof(float) * nseq);

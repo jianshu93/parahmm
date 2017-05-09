@@ -13,14 +13,14 @@ void viterbi(int *data, int len, int nstates,int nobvs, float *prior, float *tra
 
     double startTime = CycleTimer::currentSeconds();
     for (int i = 0; i < nstates; i++) {
-        lambda[i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
+        lambda[i] = prior[i] + obvs[IDXT(i,data[0],nstates)];
         backtrace[i] = -1;       /* -1 is starting point */
     }
     
     __m256 lambda_AVX, trans_AVX, obvs_AVX;
     __m256 result; 
 
-    for (int i = 1; i < len; i++) {
+/*    for (int i = 1; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
             obvs_AVX = _mm256_set1_ps(obvs[IDX(j,data[i],nobvs)]);
             for (int k = 0; k < nstates; k+=8) {
@@ -35,6 +35,31 @@ void viterbi(int *data, int len, int nstates,int nobvs, float *prior, float *tra
                         backtrace[i * nstates + j] = k+m;
                     }
                 }
+            }
+        }
+    }*/
+
+    for (int i = 1; i < len; i++) {
+        /*Use SIMD to compute lambda[i][j..j+8] simultaneously.*/
+        for (int j = 0; j < nstates; j+=8) {
+            __m256 max = _mm256_set1_ps(-INFINITY);
+            __m256 kMax = _mm256_setzero_ps();
+            obvs_AVX = _mm256_load_ps(obvs + data[i] * nstates + j);
+            /*lambda[i][j] = max{k}(lambda[i-1][k] * trans[k][j] * obvs[j][o]*/
+            for (int k = 0; k < nstates; k++) {
+                __m256 kIndex = _mm256_set1_ps((float)k);
+                trans_AVX = _mm256_load_ps(trans + k * nstates + j);
+                lambda_AVX = _mm256_set1_ps(lambda[(i-1) * nstates + k]);
+                result = _mm256_add_ps(lambda_AVX, trans_AVX);
+                result = _mm256_add_ps(result, obvs_AVX);
+                __m256 mask = _mm256_cmp_ps(max, result, _CMP_LT_OQ);
+                kMax = _mm256_blendv_ps(kMax, kIndex, mask);
+                max = _mm256_max_ps(max, result);
+            }
+            _mm256_store_ps(lambda + i * nstates + j, max);
+            float* p = (float *)&kMax;
+            for (int k = 0; k < 8; k++) {
+                backtrace[i * nstates + j + k] = (int)p[k];
             }
         }
     }
