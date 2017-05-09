@@ -18,16 +18,21 @@ double forward(int *data, int len, int nstates, int nobvs,
     }
 
     double startTime = CycleTimer::currentSeconds();
-    /* forward pass */
-    for (int i = 0; i < nstates; i++) {
-        alpha[i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
-    }
+    #pragma omp parallel 
+    { 
+        /* forward pass */
+        #pragma omp for
+        for (int i = 0; i < nstates; i++) {
+            alpha[i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
+        }
 
-    for (int i = 1; i < len; i++) {
-        for (int j = 0; j < nstates; j++) {
-            for (int k = 0; k < nstates; k++) {
-                double p = alpha[(i-1) * nstates + k] + trans[IDX(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
-                alpha[i * nstates + j] = logadd(alpha[i * nstates + j], p);
+        for (int i = 1; i < len; i++) {
+            #pragma omp for schedule(static)
+            for (int j = 0; j < nstates; j++) {
+                for (int k = 0; k < nstates; k++) {
+                    double p = alpha[(i-1) * nstates + k] + trans[IDX(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
+                    alpha[i * nstates + j] = logadd(alpha[i * nstates + j], p);
+                }
             }
         }
     }
