@@ -5,8 +5,8 @@ float forward(int *data, int len, int nstates, int nobvs,
     /* construct trellis */
     // float alpha[len][nstates];
     // float beta[len][nstates];
-    float *alpha = (float *)malloc(len * nstates * sizeof(float));
-    float *beta = (float *)malloc(len * nstates * sizeof(float));
+    float *alpha = (float *)aligned_alloc(32, len * nstates * sizeof(float));
+    float *beta = (float *)aligned_alloc(32, len * nstates * sizeof(float));
 
     float loglik;
 
@@ -22,10 +22,16 @@ float forward(int *data, int len, int nstates, int nobvs,
     for (int i = 0; i < nstates; i++) {
         alpha[i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
     }
+    
+    __m256 alpha_AVX, trans_AVX, obvs_AVX;
+    __m256 result = 
 
     for (int i = 1; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
-            for (int k = 0; k < nstates; k++) {
+            for (int k = 0; k < nstates; k+=8) {
+                alpha_AVX = _mm256_load_ps(alpha + (i-1) * nstates + k);
+                trans_AVX = _mm256_load_ps(trans + j * nstates + k);
+                obvs_AVX = _mm256_set1_ps(obvs[IDX(j,data[i],nobvs)]);
                 float p = alpha[(i-1) * nstates + k] + trans[IDXT(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
                 alpha[i * nstates + j] = logadd(alpha[i * nstates + j], p);
             }

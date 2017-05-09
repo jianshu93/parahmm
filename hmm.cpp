@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <omp.h>
+#include <immintrin.h>
 #include "CycleTimer.h"
 #include "hmm.h"
 #include "forward.cpp"
@@ -120,20 +121,20 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
 
-            prior = (float *) malloc(sizeof(float) * nstates);
-            if (prior == NULL) handle_error("malloc");
+            prior = (float *) aligned_alloc(32, sizeof(float) * nstates);
+            if (prior == NULL) handle_error("aligned_alloc");
 
-            trans = (float *) malloc(sizeof(float) * nstates * nstates);
-            if (trans == NULL) handle_error("malloc");
+            trans = (float *) aligned_alloc(32, sizeof(float) * nstates * nstates);
+            if (trans == NULL) handle_error("aligned_alloc");
 
-            transT = (float *) malloc(sizeof(float) * nstates * nstates);
-            if (transT == NULL) handle_error("malloc");
+            transT = (float *) aligned_alloc(32, sizeof(float) * nstates * nstates);
+            if (transT == NULL) handle_error("aligned_alloc");
 
-            xi = (float *) malloc(sizeof(float) * nstates * nstates);
-            if (xi == NULL) handle_error("malloc");
+            xi = (float *) aligned_alloc(32, sizeof(float) * nstates * nstates);
+            if (xi == NULL) handle_error("aligned_alloc");
 
-            pi = (float *) malloc(sizeof(float) * nstates);
-            if (pi == NULL) handle_error("malloc");
+            pi = (float *) aligned_alloc(32, sizeof(float) * nstates);
+            if (pi == NULL) handle_error("aligned_alloc");
 
         } else if (i == 1) {
             if (sscanf(linebuf, "%d", &nobvs) != 1) {
@@ -142,11 +143,11 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
 
-            obvs = (float *) malloc(sizeof(float) * nstates * nobvs);
-            if (obvs == NULL) handle_error("malloc");
+            obvs = (float *) aligned_alloc(32, sizeof(float) * nstates * nobvs);
+            if (obvs == NULL) handle_error("aligned_alloc");
 
-            gmm = (float *) malloc(sizeof(float) * nstates * nobvs);
-            if (gmm == NULL) handle_error("malloc");
+            gmm = (float *) aligned_alloc(32, sizeof(float) * nstates * nobvs);
+            if (gmm == NULL) handle_error("aligned_alloc");
 
         } else if (i == 2) {
             /* read initial state probabilities */ 
@@ -195,8 +196,8 @@ int main(int argc, char *argv[])
                 freeall();
                 exit(EXIT_FAILURE);
             }
-            data = (int *) malloc (sizeof(int) * nseq * length);
-            if (data == NULL) handle_error("malloc");
+            data = (int *) aligned_alloc (32, sizeof(int) * nseq * length);
+            if (data == NULL) handle_error("aligned_alloc");
         } else if (i <= 3 + nstates * 2 + nseq) {
             /* read data */
             bin = fmemopen(linebuf, buflen, "r");
