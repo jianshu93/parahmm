@@ -45,6 +45,7 @@ int nseq = 0;                   /* number of data sequences  */
 int length = 0;                 /* data sequencel length */
 float *prior = NULL;           /* initial state probabilities */
 float *trans = NULL;           /* state transition probabilities */
+float *transT = NULL;           /* state transition probabilities */
 float *obvs = NULL;            /* output probabilities */
 int *data = NULL;
 
@@ -125,6 +126,9 @@ int main(int argc, char *argv[])
             trans = (float *) malloc(sizeof(float) * nstates * nstates);
             if (trans == NULL) handle_error("malloc");
 
+            transT = (float *) malloc(sizeof(float) * nstates * nstates);
+            if (transT == NULL) handle_error("malloc");
+
             xi = (float *) malloc(sizeof(float) * nstates * nstates);
             if (xi == NULL) handle_error("malloc");
 
@@ -169,6 +173,7 @@ int main(int argc, char *argv[])
                     exit(EXIT_FAILURE);
                 }
                 trans[IDX((i - 3),j, nstates)] = logf(d);
+                transT[IDXT((i - 3),j, nstates)] = logf(d);
             }
             fclose(bin);
         } else if (i <= 2 + nstates * 2) {
@@ -219,16 +224,16 @@ int main(int argc, char *argv[])
     }
 
     if (mode == 3) {
-        baum_welch(data, nseq, iterations, length, nstates, nobvs, prior, trans, obvs);
+        baum_welch(data, nseq, iterations, length, nstates, nobvs, prior, transT, obvs);
     } else if (mode == 2) {
         for (i = 0; i < nseq; i++) {
-            viterbi(data + length * i, length, nstates, nobvs, prior, trans, obvs);
+            viterbi(data + length * i, length, nstates, nobvs, prior, transT, obvs);
         }
     } else if (mode == 1) {
         loglik = (float *) malloc(sizeof(float) * nseq);
         if (loglik == NULL) handle_error("malloc");
         for (i = 0; i < nseq; i++) {
-            loglik[i] = forward(data + length * i, length, nstates, nobvs, prior, trans, obvs);
+            loglik[i] = forward(data + length * i, length, nstates, nobvs, prior, transT, obvs);
         }
         p = sum(loglik, nseq);
         for (i = 0; i < nseq; i++)

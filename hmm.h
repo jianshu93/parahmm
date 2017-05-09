@@ -11,5 +11,6 @@ void usage();
 void freeall();
 
 #define IDX(i,j,d) (((i)*(d))+(j))
+#define IDXT(i,j,d) (((j)*(d))+(i))
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)

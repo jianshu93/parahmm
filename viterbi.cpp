@@ -21,7 +21,7 @@ void viterbi(int *data, int len, int nstates,int nobvs, float *prior, float *tra
     for (int i = 1; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
             for (int k = 0; k < nstates; k++) {
-                p = lambda[(i-1) * nstates + k] + trans[IDX(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
+                p = lambda[(i-1) * nstates + k] + trans[IDXT(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
                 if (p > lambda[i * nstates + j]) {
                     lambda[i * nstates + j] = p;
                     backtrace[i * nstates + j] = k;

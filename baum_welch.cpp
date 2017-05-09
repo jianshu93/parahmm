@@ -26,7 +26,7 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
     for (int i = 1; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
             for (int k = 0; k < nstates; k++) {
-                float p = alpha[(i-1) * nstates + k] + trans[IDX(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
+                float p = alpha[(i-1) * nstates + k] + trans[IDXT(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
                 alpha[i * nstates + j] = logadd(alpha[i * nstates + j], p);
             }
         }
@@ -47,11 +47,11 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
             gmm[IDX(j,data[len-i],nobvs)] = logadd(gmm[IDX(j,data[len-i],nobvs)], e);
 
             for (int k = 0; k < nstates; k++) {
-                float p = beta[(len-i) * nstates + k] + trans[IDX(j,k,nstates)] + obvs[IDX(k,data[len-i],nobvs)];
+                float p = beta[(len-i) * nstates + k] + trans[IDXT(j,k,nstates)] + obvs[IDX(k,data[len-i],nobvs)];
                 beta[(len-1-i) * nstates + j] = logadd(beta[(len-1-i) * nstates + j], p);
 
                 e = alpha[(len-1-i) * nstates + j] + beta[(len-i) * nstates + k]
-                    + trans[IDX(j,k,nstates)] + obvs[IDX(k,data[len-i],nobvs)] - loglik;
+                    + trans[IDXT(j,k,nstates)] + obvs[IDX(k,data[len-i],nobvs)] - loglik;
                 xi[IDX(j,k,nstates)] = logadd(xi[IDX(j,k,nstates)], e);
             }
         }
@@ -144,9 +144,10 @@ void update_prob(int nstates, int nobvs, float *prior, float *trans, float *obvs
         }
     }
 
+    /* May need to blocking!!!*/
     for (i = 0; i < nstates; i++) {
         for (j = 0; j < nstates; j++) {
-            trans[IDX(i,j,nstates)] = xi[IDX(i,j,nstates)] - xisum[i];
+            trans[IDXT(i,j,nstates)] = xi[IDX(i,j,nstates)] - xisum[i];
         }
         for (j = 0; j < nobvs; j++) {
             obvs[IDX(i,j,nobvs)] = gmm[IDX(i,j,nobvs)] - gmmsum[i];
