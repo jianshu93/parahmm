@@ -270,42 +270,6 @@ void init_count() {
         pi[i] = - INFINITY;
 }
 
-void update_prob() {
-    float pisum = - INFINITY;
-    float gmmsum[nstates];
-    float xisum[nstates];
-    size_t i, j;
-
-    for (i = 0; i < nstates; i++) {
-        gmmsum[i] = - INFINITY;
-        xisum[i] = - INFINITY;
-
-        pisum = logadd(pi[i], pisum);
-    }
-
-    for (i = 0; i < nstates; i++) {
-        prior[i] = pi[i] - pisum;
-    }
-
-    for (i = 0; i < nstates; i++) {
-        for (j = 0; j < nstates; j++) {
-            xisum[i] = logadd(xisum[i], xi[IDX(i,j,nstates)]);
-        }
-        for (j = 0; j < nobvs; j++) {
-            gmmsum[i] = logadd(gmmsum[i], gmm[IDX(i,j,nobvs)]);
-        }
-    }
-
-    for (i = 0; i < nstates; i++) {
-        for (j = 0; j < nstates; j++) {
-            trans[IDX(i,j,nstates)] = xi[IDX(i,j,nstates)] - xisum[i];
-        }
-        for (j = 0; j < nobvs; j++) {
-            obvs[IDX(i,j,nobvs)] = gmm[IDX(i,j,nobvs)] - gmmsum[i];
-        }
-    }
-}
-
 float logadd(float x, float y) {
     if (y <= x)
         return x + log1pf(expf(y - x));

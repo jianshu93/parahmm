@@ -88,7 +88,7 @@ void baum_welch(int *data, int nseq, int iterations, int length, int nstates, in
         }
         float p = sum(loglik, nseq);
 
-        update_prob();
+        update_prob(nstates, nobvs, prior, trans, obvs);
 
         printf("iteration %d log-likelihood: %.4lf\n", i + 1, p);
         printf("updated parameters:\n");
@@ -116,4 +116,40 @@ void baum_welch(int *data, int nseq, int iterations, int length, int nstates, in
         printf("Time taken %.4f milliseconds\n",  (endTime - startTime) * 1000);
     }
     free(loglik);
+}
+
+void update_prob(int nstates, int nobvs, float *prior, float *trans, float *obvs) {
+    float pisum = - INFINITY;
+    float gmmsum[nstates];
+    float xisum[nstates];
+    size_t i, j;
+
+    for (i = 0; i < nstates; i++) {
+        gmmsum[i] = - INFINITY;
+        xisum[i] = - INFINITY;
+
+        pisum = logadd(pi[i], pisum);
+    }
+
+    for (i = 0; i < nstates; i++) {
+        prior[i] = pi[i] - pisum;
+    }
+
+    for (i = 0; i < nstates; i++) {
+        for (j = 0; j < nstates; j++) {
+            xisum[i] = logadd(xisum[i], xi[IDX(i,j,nstates)]);
+        }
+        for (j = 0; j < nobvs; j++) {
+            gmmsum[i] = logadd(gmmsum[i], gmm[IDX(i,j,nobvs)]);
+        }
+    }
+
+    for (i = 0; i < nstates; i++) {
+        for (j = 0; j < nstates; j++) {
+            trans[IDX(i,j,nstates)] = xi[IDX(i,j,nstates)] - xisum[i];
+        }
+        for (j = 0; j < nobvs; j++) {
+            obvs[IDX(i,j,nobvs)] = gmm[IDX(i,j,nobvs)] - gmmsum[i];
+        }
+    }
 }
