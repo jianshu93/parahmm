@@ -2,7 +2,7 @@
 void viterbi(int *data, int len, int nstates,int nobvs, float *prior, float *trans, float *obvs)
 {
     float *lambda = (float *)aligned_alloc(32, len * nstates * sizeof(float));
-    int *backtrace = (int *)malloc(len * nstates * sizeof(int));
+    int *backtrace = (int *)aligned_alloc(32, len * nstates * sizeof(int));
     int *stack = (int *)malloc(len * sizeof(int));
 
     for (int i = 0; i < len; i++) {
@@ -57,10 +57,8 @@ void viterbi(int *data, int len, int nstates,int nobvs, float *prior, float *tra
                 max = _mm256_max_ps(max, result);
             }
             _mm256_store_ps(lambda + i * nstates + j, max);
-            float* p = (float *)&kMax;
-            for (int k = 0; k < 8; k++) {
-                backtrace[i * nstates + j + k] = (int)p[k];
-            }
+            __m256i kMaxi = _mm256_cvtps_epi32(kMax);
+            _mm256_store_si256((__m256i *)(backtrace + i * nstates + j), kMaxi);
         }
     }
 
