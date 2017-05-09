@@ -24,16 +24,20 @@ float forward(int *data, int len, int nstates, int nobvs,
     }
     
     __m256 alpha_AVX, trans_AVX, obvs_AVX;
-    __m256 result = 
+    __m256 result; 
 
     for (int i = 1; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
+            obvs_AVX = _mm256_set1_ps(obvs[IDX(j,data[i],nobvs)]);
             for (int k = 0; k < nstates; k+=8) {
                 alpha_AVX = _mm256_load_ps(alpha + (i-1) * nstates + k);
                 trans_AVX = _mm256_load_ps(trans + j * nstates + k);
-                obvs_AVX = _mm256_set1_ps(obvs[IDX(j,data[i],nobvs)]);
-                float p = alpha[(i-1) * nstates + k] + trans[IDXT(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
-                alpha[i * nstates + j] = logadd(alpha[i * nstates + j], p);
+                result = _mm256_add_ps(alpha_AVX, trans_AVX);
+                result = _mm256_add_ps(result, obvs_AVX);
+                float* p = (float*)&result;
+                for (int m = 0; m < 8; m++) {
+                    alpha[i * nstates + j] = logadd(alpha[i * nstates + j], p[m]);
+                }
             }
         }
     }
