@@ -6,51 +6,51 @@ double *pi = NULL;              /* pi */
 double forward_backward(int *data, int len, int nstates, int nobvs, double *prior, double *trans, double *obvs)
 {
     /* construct trellis */
-    double alpha[len][nstates];
-    double beta[len][nstates];
+    double *alpha = (double *)malloc(len * nstates * sizeof(double));
+    double *beta = (double *)malloc(len * nstates * sizeof(double));
 
     double loglik;
 
     for (int i = 0; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
-            alpha[i][j] = - INFINITY;
-            beta[i][j] = - INFINITY;
+            alpha[i*nstates + j] = - INFINITY;
+            beta[i*nstates + j] = - INFINITY;
         }
     }
 
     /* forward pass */
     for (int i = 0; i < nstates; i++) {
-        alpha[0][i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
+        alpha[i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
     }
     
     for (int i = 1; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
             for (int k = 0; k < nstates; k++) {
-                double p = alpha[i-1][k] + trans[IDX(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
-                alpha[i][j] = logadd(alpha[i][j], p);
+                double p = alpha[(i-1) * nstates + k] + trans[IDX(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
+                alpha[i * nstates + j] = logadd(alpha[i * nstates + j], p);
             }
         }
     }
     loglik = -INFINITY;
     for (int i = 0; i < nstates; i++) {
-        loglik = logadd(loglik, alpha[len-1][i]);
+        loglik = logadd(loglik, alpha[(len-1) * nstates + i]);
     }
 
     /* backward pass & update counts */
     for (int i = 0; i < nstates; i++) {
-        beta[len-1][i] = 0;         /* 0 = log (1.0) */
+        beta[(len-1) * nstates + i] = 0;         /* 0 = log (1.0) */
     }
     for (int i = 1; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
 
-            double e = alpha[len-i][j] + beta[len-i][j] - loglik;
+            double e = alpha[(len-i) * nstates + j] + beta[(len-i) * nstates + j] - loglik;
             gmm[IDX(j,data[len-i],nobvs)] = logadd(gmm[IDX(j,data[len-i],nobvs)], e);
 
             for (int k = 0; k < nstates; k++) {
-                double p = beta[len-i][k] + trans[IDX(j,k,nstates)] + obvs[IDX(k,data[len-i],nobvs)];
-                beta[len-1-i][j] = logadd(beta[len-1-i][j], p);
+                double p = beta[(len-i) * nstates + k] + trans[IDX(j,k,nstates)] + obvs[IDX(k,data[len-i],nobvs)];
+                beta[(len-1-i) * nstates + j] = logadd(beta[(len-1-i) * nstates + j], p);
 
-                e = alpha[len-1-i][j] + beta[len-i][k]
+                e = alpha[(len-1-i) * nstates + j] + beta[(len-i) * nstates + k]
                     + trans[IDX(j,k,nstates)] + obvs[IDX(k,data[len-i],nobvs)] - loglik;
                 xi[IDX(j,k,nstates)] = logadd(xi[IDX(j,k,nstates)], e);
             }
@@ -58,9 +58,9 @@ double forward_backward(int *data, int len, int nstates, int nobvs, double *prio
     }
     double p = -INFINITY;
     for (int i = 0; i < nstates; i++) {
-        p = logadd(p, prior[i] + beta[0][i] + obvs[IDX(i,data[0],nobvs)]);
+        p = logadd(p, prior[i] + beta[i] + obvs[IDX(i,data[0],nobvs)]);
 
-        double e = alpha[0][i] + beta[0][i] - loglik;
+        double e = alpha[i] + beta[i] - loglik;
         gmm[IDX(i,data[0],nobvs)] = logadd(gmm[IDX(i,data[0],nobvs)], e);
 
         pi[i] = logadd(pi[i], e);
