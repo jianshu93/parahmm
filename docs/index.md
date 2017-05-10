@@ -5,7 +5,6 @@ Team members:
 - Danhao Guo (<danhaog@andrew.cmu.edu>)
 
 # Final Report Temp
-![GitHub Logo](/docs/ViterbiSIMD.png)
 <img src="https://github.com/firebb/parahmm/blob/master/docs/ViterbiSIMD.png">
 
 # Middle Checkpoint
