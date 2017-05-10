@@ -35,6 +35,7 @@
 #include <omp.h>
 #include <immintrin.h>
 #include "CycleTimer.h"
+#include "avx_mathfun.h"
 #include "hmm.h"
 #include "forward.cpp"
 #include "viterbi.cpp"
@@ -239,7 +240,7 @@ int main(int argc, char *argv[])
         loglik = (float *) malloc(sizeof(float) * nseq);
         if (loglik == NULL) handle_error("malloc");
         for (i = 0; i < nseq; i++) {
-            loglik[i] = forward(data + length * i, length, nstates, nobvs, prior, transT, obvs);
+            loglik[i] = forward(data + length * i, length, nstates, nobvs, prior, trans, obvsT);
         }
         p = sum(loglik, nseq);
         for (i = 0; i < nseq; i++)
