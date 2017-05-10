@@ -6,7 +6,6 @@ float forward(int *data, int len, int nstates, int nobvs,
     // float alpha[len][nstates];
     // float beta[len][nstates];
     float *alpha = (float *)aligned_alloc(32, len * nstates * sizeof(float));
-    float *beta = (float *)aligned_alloc(32, len * nstates * sizeof(float));
 
     float loglik;
 
@@ -20,9 +19,11 @@ float forward(int *data, int len, int nstates, int nobvs,
         }
 
         __m256 result_AVX;
+        __m256 result_AVX2;
         __m256 alpha_AVX; 
+        __m256 alpha_AVX2; 
         __m256 trans_AVX, obvs_AVX;
-        __m256 all_Inf = _mm256_set1_ps(-INFINITY);
+        __m256 trans_AVX2, obvs_AVX2;
 
         for (int i = 1; i < len; i++) {
             #pragma omp for
@@ -32,18 +33,26 @@ float forward(int *data, int len, int nstates, int nobvs,
             //        alpha[i * nstates + j] = logadd(alpha[i * nstates + j], p);
             //    }
             //}
-            for (int j = 0; j < nstates; j+=8) {
+            for (int j = 0; j < nstates; j+=16) {
                 result_AVX = _mm256_set1_ps(-INFINITY);
+                result_AVX2 = _mm256_set1_ps(-INFINITY);
                 obvs_AVX = _mm256_load_ps(obvs + data[i] * nstates + j);
+                obvs_AVX2 = _mm256_load_ps(obvs + data[i] * nstates + j + 8);
                 for (int k = 0; k < nstates; k++) {
                     alpha_AVX = _mm256_set1_ps(alpha[(i-1) * nstates + k]);
+                    alpha_AVX2 = _mm256_set1_ps(alpha[(i-1) * nstates + k]);
                     trans_AVX = _mm256_load_ps(trans + k*nstates + j);
+                    trans_AVX2 = _mm256_load_ps(trans + k*nstates + j + 8);
                     // calculate p
                     alpha_AVX = _mm256_add_ps(alpha_AVX, trans_AVX);
+                    alpha_AVX2 = _mm256_add_ps(alpha_AVX2, trans_AVX2);
                     alpha_AVX = _mm256_add_ps(alpha_AVX, obvs_AVX);
+                    alpha_AVX2 = _mm256_add_ps(alpha_AVX2, obvs_AVX2);
                     result_AVX = logadd(result_AVX,  alpha_AVX);
+                    result_AVX2 = logadd(result_AVX2,  alpha_AVX2);
                 }
                 _mm256_store_ps(alpha + i*nstates + j, result_AVX);
+                _mm256_store_ps(alpha + i*nstates + j + 8, result_AVX2);
             }
         }
     }
@@ -56,11 +65,10 @@ float forward(int *data, int len, int nstates, int nobvs,
     printf("Time taken %.4f milliseconds\n",  (endTime - startTime) * 1000);
 
     free(alpha);
-    free(beta);
     return loglik;
 }
 
-__m256 logadd(__m256 a, __m256 b) {
+inline __m256 logadd(__m256 a, __m256 b) {
     __m256 max_AVX, min_AVX; 
     __m256 all_one = _mm256_set1_ps(1);
     max_AVX = _mm256_max_ps(a, b);
