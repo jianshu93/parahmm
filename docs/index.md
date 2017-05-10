@@ -18,6 +18,7 @@ We optimization focus on two levels of parallelism: 1. SIMD parallelism 2. Multi
 1. Since all transition and emission probability numbers are small, to avoid arithmetic instability, all the computation has to be performed in log-space. This makes it different from simple matrix multiplication which has been studied well.
 2. Matrices have to be carefully chosen to avoid scatter and gather in the SIMD instructions and poor data locality.
 
+## Partial Results
 ![GitHub Logo](ViterbiSIMD.png)
 *Single thread viterbi algorithm optimization*
 
