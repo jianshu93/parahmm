@@ -5,6 +5,13 @@ Team members:
 - Danhao Guo (<danhaog@andrew.cmu.edu>)
 
 # Final Report Temp
+## Summary
+We implemented the multi-core parallel version of hidden Markov model (HMM) algorithms:
+1. Compute the probability of the observation sequence. (Forward / Backward Algorithm) 
+2. Decode the observations to find hidden state sequence with the most probablility. (Viterbi Algorithm) 
+3. Unsupervised training of hidden Markov mode parameters. (Baum-Welch Algorithm)
+We tested our implementation on the 8 physical cores hyper-threading (16 logical cores) GHC machines. With AVX instructions, we achieved 6.62X and 5.60X speed up over baseline for single thread Forward and Viterbi algorithm. With 8 threads, we achieved 7.29X and 4.7X speed up over the AVX implementation.
+
 ![GitHub Logo](ViterbiSIMD.png)
 *Single thread viterbi algorithm optimization*
 
