@@ -6,6 +6,7 @@ Team members:
 
 # Final Report Temp
 ![GitHub Logo](ViterbiSIMD.png)
+<center>Single thread viterbi algorithm optimization</center>
 *Single thread viterbi algorithm optimization*
 
 # Middle Checkpoint
