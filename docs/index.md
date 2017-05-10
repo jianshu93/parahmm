@@ -13,6 +13,8 @@ We implemented the multi-core parallel version of hidden Markov model (HMM) algo
 
 We tested our implementation on the 8 physical cores hyper-threading GHC machines. With AVX instructions, we achieved 6.62X and 5.60X speed up over baseline for single thread Forward and Viterbi algorithm. With 8 threads, we achieved 7.29X and 4.7X speed up over the AVX implementation. We achieved a total speed up of 66.48X over the baseline for Forward algorithm using 16 threads on the GHC machine.
 
+## Technical Challenges
+
 ![GitHub Logo](ViterbiSIMD.png)
 *Single thread viterbi algorithm optimization*
 
