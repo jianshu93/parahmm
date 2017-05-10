@@ -16,7 +16,9 @@ We tested our implementation on the 8 physical cores hyper-threading GHC machine
 ## Technical Challenges
 We optimization focus on two levels of parallelism: 1. SIMD parallelism 2. Multi-threading parallelism. Hidden Markov Model algorithms are similar to the inference procedure of the deep neural network, which is performed by a layer by layer fashion. Each layer depends on the previous layer, but in each layer, the computation is independent. Therefore, work can be easily divided for each thread and the speed up is close to linear. However, it is non-trivial to utilize SIMD parallelism in HMM algorithms. The challenge comes from several parts:
 1. Since all transition and emission probability numbers are small, to avoid arithmetic instability, all the computation has to be performed in log-space. This makes it different from simple matrix multiplication which has been studied well.
-2. Matrices have to be carefully chosen to avoid scatter and gather in the SIMD instructions and poor data locality.
+2. Matrices layouts have to be carefully chosen to avoid scatter and gather in the SIMD instructions.
+3. Three algorithms have different data access patterns, algorithms need to consider data locality.
+
 
 ## Partial Results
 ![GitHub Logo](ViterbiSIMD.png)
