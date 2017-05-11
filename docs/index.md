@@ -11,7 +11,7 @@ We implemented the multi-core parallel version of hidden Markov model (HMM) algo
 2. Decode the observations to find hidden state sequence with the most probablility. (Viterbi Algorithm) 
 3. Unsupervised training of hidden Markov mode parameters. (Baum-Welch Algorithm)
 
-We tested our implementation on the 8 physical cores hyper-threading GHC machines. With AVX instructions, we achieved 6.62X and 5.60X speed up over baseline for single thread Forward and Viterbi algorithm. With 8 threads, we achieved 7.29X and 4.7X speed up over the AVX implementation. We achieved a total speed up of 66.48X over the baseline for Forward algorithm using 16 threads on the GHC machine.
+We tested our implementation on the 8 physical cores hyper-threading GHC machines. With AVX instructions, we achieved 6.62X and 5.60X speed up over baseline for single thread Forward and Viterbi algorithm. With 8 threads, we achieved 7.29X and 4.7X speed up over the AVX implementation. We achieved a total speed up of 75.63X and 56.99X over the best singled threaded baseline for Forward algorithm and Baum-Welch Training Algorithm using 16 threads on the GHC machine.
 
 ## Technical Challenges
 Our optimization focuses on two levels of parallelism: 1. SIMD parallelism 2. Multi-threading parallelism. Hidden Markov Model algorithms are similar to the inference procedure of the deep neural network, which is performed by a layer by layer fashion. Each layer depends on the previous layer, but in each layer, the computation is independent. Therefore, work can be easily divided for each thread and the speed up is close to linear. However, it is non-trivial to utilize SIMD parallelism in HMM algorithms. The challenge comes from several parts:
@@ -21,10 +21,16 @@ Our optimization focuses on two levels of parallelism: 1. SIMD parallelism 2. Mu
 
 
 ## Partial Results
-![GitHub Logo](ViterbiSIMD.png)
-*Single thread viterbi algorithm optimization*
+All experiments are conducted on the Hidden Markov Model with 1024 hidden states and 32 observations. The observation sequence length is 1000.
+
+![GitHub Logo](SingleThread.png)
+*Single thread optimization for all three algorithms*
 ![GitHub Logo](MultithreadSpeedup.png)
-*Multithreading speed up on the GHC machine*
+*Multithreading speedup*
+![GitHub Logo](ExecutionTime.png)
+*Overall Execution Time For Each Algorithm*
+![GitHub Logo](OptimizationSpeedup.png)
+*Overall Speedup For Each Algorithm*
 
 # Middle Checkpoint
 Our original project idea was to extend the Kernalized Correlation Filter (KCF) [2, 3], a fast object tracker, to the multicore platform. We downloaded the original paper’s code and built up the test framework using the [Need for Speed benchmark](http://ci2cv.net/nfs/index.html)  and [VOT2014 benchmark]( http://www.votchallenge.net/vot2014/dataset.html). We then performed some profiling on the sequential implementation. The result shows that most of the cpu time is spent in the discrete fourier transform and the HOG feature extraction which is consistent to our intuition. However, as in the object tracking tasks, the bounding box of the target object is not very large and after using HOG feature which compresses 4x4 cells into single feature descriptor, the dft computation is conducted on a quite small matrix. According to our measurement, the processing time for a single frame is about 8ms where dft time holds for 4-5ms. Since in object tracking task each frame’s computation depends on the result of the previous one, the dependency is pretty high. Therefore, we think this system is not very suitable for multithreading, since the overhead of spawning and synchronization would be larger than the actual computation. We actually try to use the FFTW library to replace the opencv implementation for the code, the performance becomes worse. Therefore, the only parallelism we could benefit from would be using SIMD instructions. We think this project actually could not get much performance improvement from the multicore platform and seems to be quite narrow in opptimization approaches. We decided to switch the project. 
