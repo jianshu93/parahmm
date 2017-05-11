@@ -21,6 +21,8 @@ Our optimization focuses on two levels of parallelism: 1. SIMD parallelism 2. Mu
 
 
 ## Partial Results
+All experiments are conducted on the Hidden Markov Model with 1024 hidden states and 32 observations. The observation sequence length is 1000.
+
 ![GitHub Logo](SingleThread.png)
 *Single thread optimization for all three algorithms*
 ![GitHub Logo](MultithreadSpeedup.png)
