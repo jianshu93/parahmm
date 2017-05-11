@@ -21,7 +21,7 @@ Our optimization focuses on two levels of parallelism: 1. SIMD parallelism 2. Mu
 
 
 ## Partial Results
-![GitHub Logo](ViterbiSIMD.png)
+![GitHub Logo](SingleThread.png)
 *Single thread viterbi algorithm optimization*
 ![GitHub Logo](MultithreadSpeedup.png)
 *Multithreading speed up on the GHC machine*
