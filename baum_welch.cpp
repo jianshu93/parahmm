@@ -1,7 +1,10 @@
 float *gmm = NULL;             /* gamma */
 float *xi = NULL;              /* xi */
 float *pi = NULL;              /* pi */
-
+void printAVX(__m256 vect, char* title){
+    float *point = (float *)&vect;
+    printf("%s:%f\n", title, point[0]);
+}
 /* forward backward algoritm: return observation likelihood */
 float forward_backward(int *data, int len, int nstates, int nobvs, float *prior, float *trans, float *transT, float *obvs)
 {
@@ -22,11 +25,9 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
         alpha[i] = prior[i] + obvs[IDXT(i,data[0],nstates)];
     }
     
-    __m256 result_AVX;
-    __m256 alpha_AVX; 
-    __m256 trans_AVX, obvs_AVX;
     __m256 all_Inf = _mm256_set1_ps(-INFINITY);
 
+    double startTime = CycleTimer::currentSeconds();
     for (int i = 1; i < len; i++) {
 #pragma omp parallel for
        // for (int j = 0; j < nstates; j++) {
@@ -37,11 +38,11 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
        // }
        
         for (int j = 0; j < nstates; j+=8) {
-            result_AVX = _mm256_set1_ps(-INFINITY);
-            obvs_AVX = _mm256_load_ps(obvs + data[i] * nstates + j);
+            __m256 result_AVX = _mm256_set1_ps(-INFINITY);
+            __m256 obvs_AVX = _mm256_load_ps(obvs + data[i] * nstates + j);
             for (int k = 0; k < nstates; k++) {
-                alpha_AVX = _mm256_set1_ps(alpha[(i-1) * nstates + k]);
-                trans_AVX = _mm256_load_ps(trans + k*nstates + j);
+                __m256 alpha_AVX = _mm256_set1_ps(alpha[(i-1) * nstates + k]);
+                __m256 trans_AVX = _mm256_load_ps(trans + k*nstates + j);
                 // calculate p
                 alpha_AVX = _mm256_add_ps(alpha_AVX, trans_AVX);
                 alpha_AVX = _mm256_add_ps(alpha_AVX, obvs_AVX);
@@ -50,6 +51,7 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
             _mm256_store_ps(alpha + i*nstates + j, result_AVX);
         }
     }
+    printf("Forward taken %.4f milliseconds\n",  (CycleTimer::currentSeconds() - startTime) * 1000);
     loglik = -INFINITY;
     int thread_num = omp_get_max_threads();
 #pragma omp parallel 
@@ -72,63 +74,63 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
     }
 
     __m256 loglik_AVX = _mm256_set1_ps(loglik);
-    __m256 gmm_AVX, xi_AVX;
-    __m256 beta_AVX;
-    __m256 p_AVX;
+    startTime = CycleTimer::currentSeconds();
     for (int i = 1; i < len; i++) {
-       // gmm_AVX = _mm256_set1_ps(-INFINITY);
         #pragma omp parallel for
-        for (int j = 0; j < nstates; j++) {
+       // for (int j = 0; j < nstates; j++) {
 
-            float e = alpha[(len-i) * nstates + j] + beta[(len-i) * nstates + j] - loglik;
-            gmm[IDX(j,data[len-i],nobvs)] = logadd(gmm[IDX(j,data[len-i],nobvs)], e);
+       //     float e = alpha[(len-i) * nstates + j] + beta[(len-i) * nstates + j] - loglik;
+       //     gmm[IDXT(j,data[len-i],nstates)] = logadd(gmm[IDXT(j,data[len-i],nstates)], e);
 
-            for (int k = 0; k < nstates; k++) {
-                float p = beta[(len-i) * nstates + k] + trans[IDX(j,k,nstates)] + obvs[IDXT(k,data[len-i],nstates)];
-                beta[(len-1-i) * nstates + j] = logadd(beta[(len-1-i) * nstates + j], p);
-
-                e = alpha[(len-1-i) * nstates + j] + beta[(len-i) * nstates + k]
-                    + trans[IDX(j,k,nstates)] + obvs[IDXT(k,data[len-i],nstates)] - loglik;
-                xi[IDX(j,k,nstates)] = logadd(xi[IDX(j,k,nstates)], e);
-            }
-        }
-       // for (int j = 0; j < nstates; j+=8) {
-       //     alpha_AVX = _mm256_load_ps(alpha + (len-i) * nstates + j);
-       //     beta_AVX = _mm256_load_ps(beta + (len-i) * nstates + j);
-       //     alpha_AVX = _mm256_add_ps(alpha_AVX, beta_AVX);
-       //     alpha_AVX = _mm256_sub_ps(alpha_AVX, loglik_AVX);
-       //     gmm_AVX = logadd(gmm_AVX, alpha_AVX);
-       //     xi_AVX = _mm256_set1_ps(-INFINITY);
-       //     beta_AVX = _mm256_set1_ps(-INFINITY);
-       //     
-
-       //     alpha_AVX = _mm256_load_ps(alpha + (len-1-i) * nstates + j);
        //     for (int k = 0; k < nstates; k++) {
-       //         __m256 p_AVX = _mm256_set1_ps(beta[(len-i) * nstates + k]);
-       //         //trans_AVX = _mm256_load_ps()
-       //         obvs_AVX = _mm256_set1_ps(obvs + data[len-i] * nstates + k);
-       //         p_AVX = _mm256_add_ps(p_AVX, trans_AVX);
-       //         p_AVX = _mm256_add_ps(p_AVX, obvs_AVX);
-       //         beta_AVX = logadd(beta_AVX, p_AVX); 
+       //         float p = beta[(len-i) * nstates + k] + transT[IDXT(j,k,nstates)] + obvs[IDXT(k,data[len-i],nstates)];
+       //         beta[(len-1-i) * nstates + j] = logadd(beta[(len-1-i) * nstates + j], p);
 
-       //         __m256 e_AVX = _mm256_set1_ps(beta[(len-i) * nstates + k]);
-       //         // Use old transittion
-       //         // Use old obvs
-       //         e_AVX = _mm256_add_ps(e_AVX, alpha_AVX);
-       //         e_AVX = _mm256_add_ps(e_AVX, trans_AVX);
-       //         e_AVX = _mm256_add_ps(e_AVX, obvs_AVX);
-       //         e_AVX = _mm256_sub_ps(e_AVX, loglik_AVX);
-       //         xi_AVX = logadd(xi_AVX, e_AVX);
+       //         e = alpha[(len-1-i) * nstates + j] + beta[(len-i) * nstates + k]
+       //             + transT[IDXT(j,k,nstates)] + obvs[IDXT(k,data[len-i],nstates)] - loglik;
+       //         xi[IDXT(j,k,nstates)] = logadd(xi[IDXT(j,k,nstates)], e);
        //     }
-       //     // Store beta and xi
-       //     _mm256_store_ps(beta + (len-1-i) * nstates + j, beta_AVX);
-       //     //_mm256_store_ps(xi + );
        // }
+        for (int j = 0; j < nstates; j+=8) {
+            __m256 gmm_AVX = _mm256_load_ps(gmm + data[len-i]*nstates + j);
+            __m256 alpha_AVX = _mm256_load_ps(alpha + (len-i) * nstates + j);
+            __m256 beta_AVX = _mm256_load_ps(beta + (len-i) * nstates + j);
+            alpha_AVX = _mm256_add_ps(alpha_AVX, beta_AVX);
+            alpha_AVX = _mm256_sub_ps(alpha_AVX, loglik_AVX);
+            gmm_AVX = logadd(gmm_AVX, alpha_AVX);
+            _mm256_store_ps(gmm + data[len-i] * nstates + j, gmm_AVX);
+
+            beta_AVX = _mm256_set1_ps(-INFINITY);
+            alpha_AVX = _mm256_load_ps(alpha + (len-1-i) * nstates + j);
+            for (int k = 0; k < nstates; k++) {
+                __m256 p_AVX = _mm256_set1_ps(beta[(len-i) * nstates + k]);
+                __m256 trans_AVX = _mm256_load_ps(transT + k * nstates + j);
+                __m256 obvs_AVX = _mm256_set1_ps(obvs[data[len-i] * nstates + k]);
+                p_AVX = _mm256_add_ps(p_AVX, trans_AVX);
+                p_AVX = _mm256_add_ps(p_AVX, obvs_AVX);
+                beta_AVX = logadd(beta_AVX, p_AVX); 
+
+                __m256 xi_AVX = _mm256_load_ps(xi + k*nstates + j);
+                __m256 e_AVX = _mm256_set1_ps(beta[(len-i) * nstates + k]);
+                // Use old transittion
+                // Use old obvs
+                e_AVX = _mm256_add_ps(e_AVX, alpha_AVX);
+                e_AVX = _mm256_add_ps(e_AVX, trans_AVX);
+                e_AVX = _mm256_add_ps(e_AVX, obvs_AVX);
+                e_AVX = _mm256_sub_ps(e_AVX, loglik_AVX);
+                xi_AVX = logadd(xi_AVX, e_AVX);
+                _mm256_store_ps(xi + k*nstates + j, xi_AVX);
+            }
+            // Store beta and xi
+            _mm256_store_ps(beta + (len-1-i) * nstates + j, beta_AVX);
+
+        }
         //Store back to gmm
-        //_mm256_store_ps(gmm + data[len-i]);
     }
+    printf("Backward taken %.4f milliseconds\n",  (CycleTimer::currentSeconds() - startTime) * 1000);
     float p = -INFINITY;
 
+    startTime = CycleTimer::currentSeconds();
 #pragma omp parallel 
     {
         int tid = omp_get_thread_num();
@@ -142,14 +144,17 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
             p = logadd(local_p, p);
         }
     }
+    printf("loglikeli taken %.4f milliseconds\n",  (CycleTimer::currentSeconds() - startTime) * 1000);
 
+    startTime = CycleTimer::currentSeconds();
 #pragma omp parallel for
     for (int i = 0; i < nstates; i++) {
         float e = alpha[i] + beta[i] - loglik;
-        gmm[IDX(i,data[0],nobvs)] = logadd(gmm[IDX(i,data[0],nobvs)], e);
+        gmm[IDXT(i,data[0],nstates)] = logadd(gmm[IDXT(i,data[0],nstates)], e);
 
         pi[i] = logadd(pi[i], e);
     }
+    printf("GMm pi taken %.4f milliseconds\n",  (CycleTimer::currentSeconds() - startTime) * 1000);
 
 #ifdef DEBUG
     /* verify if forward prob == backward prob */
@@ -173,7 +178,9 @@ void baum_welch(int *data, int nseq, int iterations, int length, int nstates, in
         }
         float p = sum(loglik, nseq);
 
-        update_prob(nstates, nobvs, prior, trans, obvs);
+        double update_Time = CycleTimer::currentSeconds();
+        update_prob(nstates, nobvs, prior, trans, transT, obvs);
+        printf("update taken %.4f milliseconds\n",  (CycleTimer::currentSeconds() - update_Time) * 1000);
 
         printf("iteration %d log-likelihood: %.4lf\n", i + 1, p);
         printf("updated parameters:\n");
@@ -198,12 +205,12 @@ void baum_welch(int *data, int nseq, int iterations, int length, int nstates, in
         //}
         //printf("\n");
         double endTime = CycleTimer::currentSeconds();
-        printf("Time taken %.4f milliseconds\n",  (endTime - startTime) * 1000);
+        printf("======Time taken %.4f milliseconds======\n",  (endTime - startTime) * 1000);
     }
     free(loglik);
 }
 
-void update_prob(int nstates, int nobvs, float *prior, float *trans, float *obvs) {
+void update_prob(int nstates, int nobvs, float *prior, float *trans, float *transT, float *obvs) {
     float pisum = - INFINITY;
     int thread_num = omp_get_max_threads();
     float gmmsum[nstates];
@@ -237,20 +244,23 @@ void update_prob(int nstates, int nobvs, float *prior, float *trans, float *obvs
     #pragma omp parallel for
     for (int i = 0; i < nstates; i++) {
         for (int j = 0; j < nstates; j++) {
-            xisum[i] = logadd(xisum[i], xi[IDX(i,j,nstates)]);
+            xisum[i] = logadd(xisum[i], xi[IDXT(i,j,nstates)]);
         }
+    //}
+    //for (int i = 0; i < nstates; i++) {
         for (int j = 0; j < nobvs; j++) {
-            gmmsum[i] = logadd(gmmsum[i], gmm[IDX(i,j,nobvs)]);
+            gmmsum[i] = logadd(gmmsum[i], gmm[IDXT(i,j,nstates)]);
         }
     }
 
     /* May need to blocking!!!*/
     for (int i = 0; i < nstates; i++) {
         for (int j = 0; j < nstates; j++) {
-            trans[IDX(i,j,nstates)] = xi[IDX(i,j,nstates)] - xisum[i];
+            trans[IDX(i,j,nstates)] = xi[IDXT(i,j,nstates)] - xisum[i];
+            transT[IDXT(i,j,nstates)] = xi[IDXT(i,j,nstates)] - xisum[i];
         }
         for (int j = 0; j < nobvs; j++) {
-            obvs[IDXT(i,j,nstates)] = gmm[IDX(i,j,nobvs)] - gmmsum[i];
+            obvs[IDXT(i,j,nstates)] = gmm[IDXT(i,j,nstates)] - gmmsum[i];
         }
     }
 }
