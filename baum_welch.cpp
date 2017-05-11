@@ -1,6 +1,7 @@
 float *gmm = NULL;             /* gamma */
 float *xi = NULL;              /* xi */
 float *pi = NULL;              /* pi */
+
 void printAVX(__m256 vect, char* title){
     float *point = (float *)&vect;
     printf("%s:%f\n", title, point[0]);
@@ -154,7 +155,6 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
     printf("Backward taken %.4f milliseconds\n",  (CycleTimer::currentSeconds() - startTime) * 1000);
     float p = -INFINITY;
 
-    startTime = CycleTimer::currentSeconds();
 #pragma omp parallel 
     {
         int tid = omp_get_thread_num();
@@ -168,9 +168,7 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
             p = logadd(local_p, p);
         }
     }
-    printf("loglikeli taken %.4f milliseconds\n",  (CycleTimer::currentSeconds() - startTime) * 1000);
 
-    startTime = CycleTimer::currentSeconds();
 #pragma omp parallel for
     for (int i = 0; i < nstates; i++) {
         float e = alpha[i] + beta[i] - loglik;
@@ -178,7 +176,6 @@ float forward_backward(int *data, int len, int nstates, int nobvs, float *prior,
 
         pi[i] = logadd(pi[i], e);
     }
-    printf("GMm pi taken %.4f milliseconds\n",  (CycleTimer::currentSeconds() - startTime) * 1000);
 
 #ifdef DEBUG
     /* verify if forward prob == backward prob */
