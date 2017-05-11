@@ -11,7 +11,7 @@ void viterbi(int *data, int len, int nstates,int nobvs, float *prior, float *tra
         backtrace[i] = -1;       /* -1 is starting point */
     }
     
-/*    for (int i = 1; i < len; i++) {
+    /*for (int i = 1; i < len; i++) {
         for (int j = 0; j < nstates; j++) {
             obvs_AVX = _mm256_set1_ps(obvs[IDX(j,data[i],nobvs)]);
             for (int k = 0; k < nstates; k+=8) {
@@ -33,6 +33,7 @@ void viterbi(int *data, int len, int nstates,int nobvs, float *prior, float *tra
     for (int i = 1; i < len; i++) {
         /*Use SIMD to compute lambda[i][j..j+16] simultaneously.*/
         /*Loop Unrolling*/
+        #pragma omp parallel for
         for (int j = 0; j < nstates; j+=16) {
             __m256 max = _mm256_set1_ps(-INFINITY);
             __m256 max2 = _mm256_set1_ps(-INFINITY);
