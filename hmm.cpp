@@ -38,6 +38,7 @@
 #include "avx_mathfun.h"
 #include "hmm.h"
 #include "forward.cpp"
+#include "backward.cpp"
 #include "viterbi.cpp"
 #include "baum_welch.cpp"
 
@@ -85,7 +86,7 @@ int main(int argc, char *argv[])
                 break;
             case 'p':
                 mode = atoi(optarg);
-                if (mode != 1 && mode != 2 && mode != 3) {
+                if (mode != 1 && mode != 2 && mode != 3 && mode != 4) {
                     fprintf(stderr, "illegal mode: %d\n", mode);
                     exit(EXIT_FAILURE);
                 }
@@ -247,7 +248,19 @@ int main(int argc, char *argv[])
             printf("%.4f\n", loglik[i]);
         printf("total: %.4f\n", p);
         free(loglik);
+    } else if (mode == 4) {
+        loglik = (float *) malloc(sizeof(float) * nseq);
+        if (loglik == NULL) handle_error("malloc");
+        for (i = 0; i < nseq; i++) {
+            loglik[i] = backward(data + length * i, length, nstates, nobvs, prior, transT, obvsT);
+        }
+        p = sum(loglik, nseq);
+        for (i = 0; i < nseq; i++)
+            printf("%.4f\n", loglik[i]);
+        printf("total: %.4f\n", p);
+        free(loglik);
     }
+
 
     freeall();
     return 0;

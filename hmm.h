@@ -2,6 +2,8 @@ float logadd(float, float);
 __m256 logadd(__m256 a, __m256 b);
 float sum(float *, int);
 float forward(int *, int, int, int, float *, float *, float *);
+float backward(int *data, int len, int nstates, int nobvs,
+        float *prior, float * trans, float *obvs);
 float forward_backward(int *, int, int, int, float *, float *, float *);
 void viterbi(int *, int, int, int, float *, float *, float *);
 void baum_welch(int *data, int nseq, int iterations, int length, int nstates, int nobvs,
