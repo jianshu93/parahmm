@@ -11,7 +11,7 @@ We implemented the multi-core parallel version of hidden Markov model (HMM) algo
 2. Decode the observations to find hidden state sequence with the most probablility. (Viterbi Algorithm) 
 3. Unsupervised training of hidden Markov mode parameters. (Baum-Welch Algorithm)
 
-We tested our implementation on the 8 physical cores hyper-threading GHC machines. With AVX instructions, we achieved 6.62X and 5.60X speed up over baseline for single thread Forward and Viterbi algorithm. With 8 threads, we achieved 7.29X and 4.7X speed up over the AVX implementation. We achieved a total speed up of 66.48X over the baseline for Forward algorithm using 16 threads on the GHC machine.
+We tested our implementation on the 8 physical cores hyper-threading GHC machines. With AVX instructions, we achieved 6.62X and 5.60X speed up over baseline for single thread Forward and Viterbi algorithm. With 8 threads, we achieved 7.29X and 4.7X speed up over the AVX implementation. We achieved a total speed up of 75.63X and 56.99X over the best baseline for Forward algorithm and Baum-Welch Training Algorithm using 16 threads on the GHC machine.
 
 ## Technical Challenges
 Our optimization focuses on two levels of parallelism: 1. SIMD parallelism 2. Multi-threading parallelism. Hidden Markov Model algorithms are similar to the inference procedure of the deep neural network, which is performed by a layer by layer fashion. Each layer depends on the previous layer, but in each layer, the computation is independent. Therefore, work can be easily divided for each thread and the speed up is close to linear. However, it is non-trivial to utilize SIMD parallelism in HMM algorithms. The challenge comes from several parts:
