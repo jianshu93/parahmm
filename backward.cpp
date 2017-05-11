@@ -1,43 +1,43 @@
-/* forward algoritm: return observation likelihood */
-double forward(int *data, int len, int backward, int nstates, int nobvs,
-        double *prior, double * trans, double *obvs)
+/* backward algoritm: return observation likelihood */
+float backward(int *data, int len, int nstates, int nobvs,
+        float *prior, float * trans, float *obvs)
 {
     /* construct trellis */
-    double alpha[len][nstates];
-    double beta[len][nstates];
+    float *beta = (float *)aligned_alloc(32, len * nstates * sizeof(float));
 
-    double loglik;
+    float loglik;
 
-    #pragma omp parallel
-    {
-        #pragma omp for
-        for (int i = 0; i < len; i++) {
-            for (int j = 0; j < nstates; j++) {
-                alpha[i][j] = - INFINITY;
-                beta[i][j] = - INFINITY;
+    double startTime = CycleTimer::currentSeconds();
+
+    for (int i = 0; i < nstates; i++) {
+        beta[(len-1) * nstates + i] = 0;         /* 0 = log (1.0) */
+    }
+
+    for (int i = 1; i < len; i++) {
+        #pragma omp parallel for 
+        for (int j = 0; j < nstates; j+=8) {
+            __m256 beta_AVX = _mm256_set1_ps(-INFINITY);
+            for (int k = 0; k < nstates; k++) {
+                __m256 p_AVX = _mm256_set1_ps(beta[(len-i) * nstates + k]);
+                __m256 trans_AVX = _mm256_load_ps(trans + k * nstates + j);
+                __m256 obvs_AVX = _mm256_set1_ps(obvs[data[len-i] * nstates + k]);
+                p_AVX = _mm256_add_ps(p_AVX, trans_AVX);
+                p_AVX = _mm256_add_ps(p_AVX, obvs_AVX);
+                beta_AVX = logadd(beta_AVX, p_AVX); 
+
             }
-        }
+            // Store beta and xi
+            _mm256_store_ps(beta + (len-1-i) * nstates + j, beta_AVX);
 
-        /* forward pass */
-        #pragma omp for
-        for (int i = 0; i < nstates; i++) {
-            alpha[0][i] = prior[i] + obvs[IDX(i,data[0],nobvs)];
-        }
-        
-        for (int i = 1; i < len; i++) {
-            #pragma omp for 
-            for (int j = 0; j < nstates; j++) {
-                for (int k = 0; k < nstates; k++) {
-                    double p = alpha[i-1][k] + trans[IDX(k,j,nstates)] + obvs[IDX(j,data[i],nobvs)];
-                    alpha[i][j] = logadd(alpha[i][j], p);
-                }
-            }
         }
     }
+
     loglik = -INFINITY;
     for (int i = 0; i < nstates; i++) {
-        loglik = logadd(loglik, alpha[len-1][i]);
+        loglik = logadd(loglik, prior[i] + beta[i] + obvs[IDX(i,data[0],nobvs)]);
     }
-
+    double endTime = CycleTimer::currentSeconds();
+    printf("Time taken %.4f milliseconds\n",  (endTime - startTime) * 1000);
+    free(beta);
     return loglik;
 }
