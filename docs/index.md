@@ -25,7 +25,7 @@ Our optimization focuses on two levels of parallelism: 1. SIMD parallelism 2. Mu
 *Single thread optimization for all three algorithms*
 ![GitHub Logo](MultithreadSpeedup.png)
 *Multithreading speedup*
-![GitHub Logo](Execution Time.png)
+![GitHub Logo](ExecutionTime.png)
 *Overall Execution Time For Each Algorithm*
 ![GitHub Logo](OptimizationSpeedup.png)
 *Overall Speedup For Each Algorithm*
