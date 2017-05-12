@@ -85,6 +85,8 @@ Since we are using the AVX SIMD instructions to accelerate the algorithm, one ke
 
 *Figure 6. layout of padding for flexible model size*
 
+The example shows the situation where only 6 floating values in each row. We add two zeros to make the alignment correct for AVX instructions. Special boundary conditions are handled in the code. In order to support the loop unroll, we set the padding size to be 16 float length. In our experiments, the overhead of this is negligible since it does not modify the inner loop structure.
+
 
 ## Results
 We conducts series of experiments on our ParaHMM implementation to evaluate the performance optimization we achieve.
