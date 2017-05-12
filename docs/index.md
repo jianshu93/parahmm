@@ -70,7 +70,7 @@ In each inner loop, we would read out 8 float values from transition matrix and 
 Since the cache line size is 512 bits long, while AVX register is only 256 bits long, the rest 8 float values would be evicted out of the higher level cache due to our vertical access pattern. We could solve this problem by loop unrolling and accumulating 2 SIMD vectors. In this case, we are able to use all the values we read into the Level 1 cache line which doubles the computation intensity.
 One interesting thing here is that for the sequential algorithm, we use the transpose matrix to improve locality while we have to use the original matrix to improve the SIMD utilization. The key take away is that for parallel programing, the best data layout may differ from each algorithm.
 ### Different model size support
-Since we are using the AVX SIMD instructions to accelerate the algorithm, one key requirement is that all matrices have to be 32 bytes aligned. Our experiments are mainly performed on hidden states like 256, 512, 1024 etc. where each the data alignment and partitioning is not a problem. However, in order to make our implementation suitable for different sizes of models, we use padding to make all operations could still be performed by AVX operations.
+Since we are using the AVX SIMD instructions to accelerate the algorithm, one key requirement is that all matrices have to be 32 bytes aligned. Our experiments are mainly performed on hidden states like 256, 512, 1024 etc. where the data alignment and partitioning is not a problem. However, in order to make our implementation suitable for different sizes of models, we use padding to make all operations could still be performed by AVX operations.
 
 ![smiley](padding.png){:height="500px" width="500px"}.
 
