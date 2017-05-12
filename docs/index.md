@@ -19,6 +19,8 @@ Our optimization focuses on two levels of parallelism: 1. SIMD parallelism 2. Mu
 2. Matrices layouts have to be carefully chosen to avoid scatter and gather in the SIMD instructions.
 3. Three algorithms have different data access patterns, algorithms need to consider data locality.
 
+## Approach
+As previously discussed, the data dependency is in 
 
 ## Partial Results
 All experiments are conducted on the Hidden Markov Model with 1024 hidden states and 32 observations. The observation sequence length is 1000.
