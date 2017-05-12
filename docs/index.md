@@ -22,11 +22,11 @@ Our optimization focuses on two levels of parallelism: 1. SIMD parallelism 2. Mu
 ## Background
 Hidden Markov model contains a Markov chain of hidden states and their emisstion to observations. The network example is shown below. Notice that Markov property assumes that a state is only dependent on its direct predecessor state. And this is the premises of Hidden Markov Model.
 ![GitHub Logo](Concepts.png)
-*Figure 1. Concepts and data structure for Hidden Markov Model*
+*Figure 1. Concepts and Data Structure for Hidden Markov Model*
 
 The main data structures for Hidden Markov Models are two matrixs storing the transition probability between hidden states and emission probability from hidden states to observations. The main operations on these two matrixs are from the calculation of alpha in forward algorithm, lambda in viterbi alogrithm and beta in backward algorithm. All computations of these three variables are similar. So We takes alpha as an example.
 ![GitHub Logo](alphaTable.png)
-*Figure 2. Dynamic programming of alpha table computation*
+*Figure 2. Dynamic Programming of Alpha Table Computation*
 
 Each alpha's value is dependent on the all alpha values of last time slot. So, the calculation includes vector multiplication of alpha in last layer, transit probability and observation probability. And then, multiplication results in the vector are summed to be the final result alpha. What should be noticed is the probabilities in real model is pretty small if the model keeps a large amount of hidden states. So, All calculations are supposed to be conducted in log space. In this regard, all multiplications becomes addition. And in calculation of alpha and beta, the aggregation function at the last becomes logsum. The logsum functions is shown below:
 ```
@@ -49,12 +49,12 @@ Notice that we are traversing the alpha table row by row, while the accesses of 
 ### SIMD with AVX intrinsics
 To further utilize SIMD instructions to speed up the computation, we need to vectorize the computation of the inner loop. AVX instructions could compute 8 floating point numbers with a single instruction which should be able to accelerate our algorithm a lot. Let’s check the actual computation first. The following graph is a visualized abstraction of the computation in the forward algorithm.
 ![GitHub Logo](VisualForward.png)
-*Figure 3. Visualization of forward algorithm alpha computation*
+*Figure 3. Visualization of Forward Algorithm Alpha Computation*
 
 As you can see, each thread would need to compute the sum of all multiplication results for a single value in column alpha[t]. It is simple to use AVX instructions for the multiplication part. However, in the end we need to compute the sum of the values in the 256bits register, which is not very efficient since we need to perform a horizontal reduction by shifting and addition (six operations to get the sum of eight values). What is even worse is that in the log space, we cannot get the sum by simple addition. Instead, we have to perform an expensive logsum as we have discussed in the background section. The horizontal logsum becomes even more inefficient and this becomes a bottleneck for the SIMD utilization. The reason is that most of the computation time for forward algorithm is taken in the logsum operation and therefore parallelizing the multiplication part does not contribute too much.
 Since the key issue here is that we need to perform a horizontal summation with AVX instruction, we could change the problem to a vertical summation which accumulates the sum for each different alpha value we need to compute. The following figure shows the difference between these two approaches.
 ![GitHub Logo](verticalhorizon.png)
-*Figure 4. SIMD parallelism in vertical and horizonal*
+*Figure 4. SIMD Parallelism in Vertical and Horizonal*
 
 In the sequential algorithm, we have to perform the sum reduction since we are computing a single alpha value which is shown in the upper part. Our SIMD implementation avoids the reduction by putting the eight results in the SIMD vector and accumulating the multiplication results to the result vector. Here, we use an [AVX_Math]( http://software-lisc.fbk.eu/avx_mathfun/) library which could computes the logarithm and exponentials for AVX vectors. Based on that, we are able to implement the AVX_logsum which could add eight multiplication results to the accumulator and fully utilize the SIMD units.
 ```
@@ -73,7 +73,7 @@ inline __m256 logadd(__m256 a, __m256 b) {
 ### Loop Unrolling to get better locality
 After we change the algorithm, the memory access pattern actually changes. The following figure gives a taste of the access pattern of the transition matrix.
 ![GitHub Logo](simdmemoryaccess.png)
-*Figure 5. SIMD + unrolling data access pattern*
+*Figure 5. SIMD + Unrolling Data Access Pattern*
 
 In each inner loop, we would read out 8 float values from transition matrix and perform SIMD operations on them. This access pattern is not ideal, since we are still read values vertically. However, it does not impair the performance too much since the computation intensity is pretty high as we are using the AVX SIMD instructions.
 
@@ -85,7 +85,7 @@ Since we are using the AVX SIMD instructions to accelerate the algorithm, one ke
 
 ![smiley](padding.png){:height="500px" width="500px"}
 
-*Figure 6. layout of padding for flexible model size*
+*Figure 6. layout of Padding for Flexible Model Size*
 
 The example shows the situation where only 6 floating values in each row. We add two zeros to make the alignment correct for AVX instructions. Special boundary conditions are handled in the code. In order to support the loop unroll, we set the padding size to be 16 float length. In our experiments, the overhead of this is negligible since it does not modify the inner loop structure.
 
@@ -97,17 +97,21 @@ All experiments are conducted on the Hidden Markov Model with 1024 hidden states
 
 The Single thread optimization figure shows the performance speedup of our implementations compared with baseline. The result shows that SIMD implementations brings out more than 4 times speedup compared with transpose version, which is reasonable for SIMD implementation although the theoretical maximum speedup is 8x. Note that the performance gain of viterbi is quite different from the other two algorithms. The reason is that it use max function rather than logsum function to do aggregation. Its computation intensity is much lower. So, it benefits more from transpose instead of SIMD support compared with other two algorithms. Moreover, the speedup gain on loop unrolling proves that the locality of data access pattern improves a lot.
 ![GitHub Logo](SingleThread.png)
-*Figure 7. Single thread optimization for all three algorithms*
+*Figure 7. Single Thread Optimization for All Three Algorithms*
 
 The result on multi-thread experiments shows great scalability of our algorithm. Our algorithm scales almost linearly on forward and baum-welch algorithm with sub-linear scalability. The reason why viterbi only scales sub-linearly is that its computation overhead is relative low so that the overhead of spawning threads is non-negligible. Note that non-linear speedup between 8 threads and 16 threads results from hyper-threading rather than physical multi-cores.
 ![GitHub Logo](MultithreadSpeedup.png)
-*Figure 8. Multithreading speedup*
+*Figure 8. Multithreading Speedup*
 
 Finally, we experiments our totally execution time. The Baseline here is the single-thread transpose version. The result shows we reduce forward algorithm running time from 38 seconds to 0.5 seconds. Viterbi algorithm also improves from 1030 milliseconds to 82 milliseconds. Baum-welch alogrithms finishes in 2 seconds instead of more than 80 seconds in baseline. The best speedup is achieved on forward algorithm, which is 75.63X.
 ![GitHub Logo](ExecutionTime.png)
-*Table 1. Overall Execution Time For Each Algorithm*
+*Table 1. Overall Execution Time for Each Algorithm*
 ![GitHub Logo](OptimizationSpeedup.png)
-*Figure 9. Overall Speedup For Each Algorithm*
+*Figure 9. Overall Speedup for Each Algorithm*
+
+The main execution of forward and viterbi algorithm is focused on computation of alpha and lambda table. They cost almost all time consumed in the algorithm. For baum-welch algorithm, the workload can be divided into three parts as it is shown below. Backward algorithm includes computation of beta, Xi and GMM which also uses dynamic programming. Xi and GMM are used to compute updates on two matrices. Maybe more improvement on locality of Xi and GMM computation can be considered.
+![GitHub Logo](BaumWelchDivision.png)
+*Figure 9. Execution Time Division of Baum-Welch Algorithm*
 
 # Reference
 [1] Rabiner, Lawrence, and B. Juang.
