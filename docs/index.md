@@ -65,7 +65,7 @@ inline __m256 logadd(__m256 a, __m256 b) {
 ```
 ### Loop Unrolling to get better locality
 After we change the algorithm, the memory access pattern actually changes. The following figure gives a taste of the access pattern of the transition matrix.
-![GitHub Logo]( simdmemoryaccess.png)
+![GitHub Logo](simdmemoryaccess.png)
 In each inner loop, we would read out 8 float values from transition matrix and perform SIMD operations on them. This access pattern is not ideal, since we are still read values vertically. However, it does not impair the performance too much since the computation intensity is pretty high as we are using the AVX SIMD instructions.
 Since the cache line size is 512 bits long, while AVX register is only 256 bits long, the rest 8 float values would be evicted out of the higher level cache due to our vertical access pattern. We could solve this problem by loop unrolling and accumulating 2 SIMD vectors. In this case, we are able to use all the values we read into the Level 1 cache line which doubles the computation intensity.
 One interesting thing here is that for the sequential algorithm, we use the transpose matrix to improve locality while we have to use the original matrix to improve the SIMD utilization. The key take away is that for parallel programing, the best data layout may differ from each algorithm.
