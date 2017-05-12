@@ -72,7 +72,7 @@ One interesting thing here is that for the sequential algorithm, we use the tran
 ### Different model size support
 Since we are using the AVX SIMD instructions to accelerate the algorithm, one key requirement is that all matrices have to be 32 bytes aligned. Our experiments are mainly performed on hidden states like 256, 512, 1024 etc. where each the data alignment and partitioning is not a problem. However, in order to make our implementation suitable for different sizes of models, we use padding to make all operations could still be performed by AVX operations.
 
-![smiley](padding.png){:height="100px" width="100px"}.
+![smiley](padding.png){:height="500px" width="500px"}.
 
 
 
