@@ -28,11 +28,11 @@ The main data structures for Hidden Markov Models are two matrixs storing the tr
 ![GitHub Logo](alphaTable.png)
 *Figure 2. Dynamic programming of alpha table computation*
 
-Each alpha's value is dependent on the all alpha values of last time slot. So, the calculation includes vector multiplication of alpha in last layer, transit probability and observation probability. And then, multiplication results in the vector are summed to be the final result alpha. What should be noticed is the probabilities in real model is pretty small if the model keeps a large amount of hiddent states. So, All calculations are supposed to be conducted in log space. In this regard, all multiplications becomes addition. And in calculation of alpha and beta, the aggregation function at the last becomes logsum. The logsum functions is shown below:
+Each alpha's value is dependent on the all alpha values of last time slot. So, the calculation includes vector multiplication of alpha in last layer, transit probability and observation probability. And then, multiplication results in the vector are summed to be the final result alpha. What should be noticed is the probabilities in real model is pretty small if the model keeps a large amount of hidden states. So, All calculations are supposed to be conducted in log space. In this regard, all multiplications becomes addition. And in calculation of alpha and beta, the aggregation function at the last becomes logsum. The logsum functions is shown below:
 ```
 logsum(x, y) = max(x, y) + log(1+exp(|y - x|))
 ```
-This is where the main computation happens. Note that, the aggregation of lambdas in viterbi algorithm is maximum instead of summation. So, the maximum operations do not change in log space because of the monotonicity of log operations.
+This is where the main computation happens. Note that, the aggregation of lambdas in viterbi algorithm is maximum instead of summation. So, the maximum operations do not change in log space because of the monotonicity of log operations. Since the computation of all alpha in the same layer. It can be potantially fully parallelized.
 
 ## Approach
 We tried to parallelize all three algorithms on multi-core CPU platforms with SIMD support. We start from a sequential [implementation](https://github.com/chuan/chmm) of the HMM algorithms which also contains a cuda implementation. As previously discussed, the data dependency is between each column in the dynamic programming table \alpha, but the computation of each value in the same column is independent. So the multithreading parallel part is quite simple as the following pseudo code.
