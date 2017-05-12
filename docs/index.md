@@ -20,9 +20,8 @@ Our optimization focuses on two levels of parallelism: 1. SIMD parallelism 2. Mu
 3. Three algorithms have different data access patterns, algorithms need to consider data locality.
 
 ## Background
-Hidden markov model consists of a markov chain of hidden states and their emisstion to observations. The network example is shown below. Notice that markov property assumes that a state is only dependent on its direct predecessor state. And this is the premises of hidden markov model.
-![GitHub Logo](MarkovChain.png)
-*markov chain*
+Hidden Markov model contains a Markov chain of hidden states and their emisstion to observations. The network example is shown below. Notice that Markov property assumes that a state is only dependent on its direct predecessor state. And this is the premises of hidden markov model.
+![GitHub Logo](Concepts.png)
 
 The main data structures for Hidden markov models are two matrixs storing the transition probability between hidden states and emission probability from hidden states to observations. 
 
