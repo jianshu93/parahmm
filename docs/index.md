@@ -49,11 +49,12 @@ Since there is no data dependency in each column, the multithreading implementat
 
 ## Partial Results
 We conducts series of experiments on our ParaHMM implementation to evaluate the performance optimization we achieve.
-The device we use is GHC machine with 8 core (2 hyper-threads) 3.2 GHz Intel Core i7 processors. It supports AVX2(256bits) vector instructions with OpenMP library. The program compiles with GCC -O2 configuration.
+The device we use is GHC machine with 8 core (2 hyper-threads) 3.2 GHz Intel Core i7 processors. It supports AVX2 (256bits) vector instructions with OpenMP library. The program compiles with GCC -O2 configuration.
 All experiments are conducted on the Hidden Markov Model with 1024 hidden states and 32 observations. The observation sequence length is 1000. The baseline we compared with is the Single threaded implementation from cuHMM.
-
+The Single thread optimization figure shows the performance speedup of our implementations compared with baseline. The result shows that SIMD implementations brings out more than 4 times speedup compared with transpose version, which is reasonable for SIMD implementation although the therotical maximum speedup is 8x. Note that the performance gain of viterbi is quite different from the other two algorithms. The reason is that it use max function rather than logsum function to do aggregation. Its computation intensity is much lower. So, it benefits more from transpose instead of SIMD support compared with other two algorithms. Moreover, the speedup gain on loop unrolling proves that the locality of data access pattern improves a lot.
 ![GitHub Logo](SingleThread.png)
 *Single thread optimization for all three algorithms*
+
 ![GitHub Logo](MultithreadSpeedup.png)
 *Multithreading speedup*
 ![GitHub Logo](ExecutionTime.png)
