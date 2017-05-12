@@ -25,7 +25,7 @@ Hidden Markov model contains a Markov chain of hidden states and their emisstion
 
 The main data structures for Hidden markov models are two matrixs storing the transition probability between hidden states and emission probability from hidden states to observations. The main operations on these two matrixs are from the calculation of alpha in forward algorithm, lambda in viterbi alogrithm and beta in backward algorithm. All computations of these three variables are similar. So We takes alpha as an example.
 ![GitHub Logo](alphaTable.png)
-Each alpha's value is dependent on the all alpha values of last time slot. So, the calculation includes vector multiplication of alpha in last layer, transit probability and observation probability. And then, multiplication results in the vector are summed to be the final result alpha. What should be noticed is the probabilities in real model is pretty small if the model keeps a large amount of hiddent states. So, All calculations are supposed to be conducted in log space. In this regard, all multiplications becomes addition. And in calculation of alpha and beta, the aggregation function at the last becomres logsum. The logsum functions is shown below:
+Each alpha's value is dependent on the all alpha values of last time slot. So, the calculation includes vector multiplication of alpha in last layer, transit probability and observation probability. And then, multiplication results in the vector are summed to be the final result alpha. What should be noticed is the probabilities in real model is pretty small if the model keeps a large amount of hiddent states. So, All calculations are supposed to be conducted in log space. In this regard, all multiplications becomes addition. And in calculation of alpha and beta, the aggregation function at the last becomes logsum. The logsum functions is shown below:
 ```
 logsum(x, y) = max(x, y) + log(1+exp(|y - x|))
 ```
@@ -51,12 +51,16 @@ Since there is no data dependency in each column, the multithreading implementat
 We conducts series of experiments on our ParaHMM implementation to evaluate the performance optimization we achieve.
 The device we use is GHC machine with 8 core (2 hyper-threads) 3.2 GHz Intel Core i7 processors. It supports AVX2 (256bits) vector instructions with OpenMP library. The program compiles with GCC -O2 configuration.
 All experiments are conducted on the Hidden Markov Model with 1024 hidden states and 32 observations. The observation sequence length is 1000. The baseline we compared with is the Single threaded implementation from cuHMM.
+
 The Single thread optimization figure shows the performance speedup of our implementations compared with baseline. The result shows that SIMD implementations brings out more than 4 times speedup compared with transpose version, which is reasonable for SIMD implementation although the therotical maximum speedup is 8x. Note that the performance gain of viterbi is quite different from the other two algorithms. The reason is that it use max function rather than logsum function to do aggregation. Its computation intensity is much lower. So, it benefits more from transpose instead of SIMD support compared with other two algorithms. Moreover, the speedup gain on loop unrolling proves that the locality of data access pattern improves a lot.
 ![GitHub Logo](SingleThread.png)
 *Single thread optimization for all three algorithms*
 
+The result on multi-thread experiments shows great scalability of our algorithm. Our algorithm scales almost linearly on forward and baum-welch algorithm with sub-linear scalability. The reason why viterbi only scales sub-linearly is that its computation overhead is relative low so that the overhead of spawning threads is non-negligible. Note that non-linear speedup between 8 threads and 16 threads results from hyper-threading rather than physical multi-cores.
 ![GitHub Logo](MultithreadSpeedup.png)
 *Multithreading speedup*
+
+Finally, we experiments our totally execution time.
 ![GitHub Logo](ExecutionTime.png)
 *Overall Execution Time For Each Algorithm*
 ![GitHub Logo](OptimizationSpeedup.png)
