@@ -36,6 +36,10 @@ for i in 0 .. T-1:
 			alpha[i][j] = logadd(alpha[i][j], p);
 ```
 
+Notice that we are traversing the alpha table row by row, while the accesses of transition matrix are column by column. This is not a cache friendly accessing pattern. A easy fix for this is to transpose the matrix so that the values are also read from the transition matrix row by row.
+
+Since there is no data dependency in each column, the multithreading implementation is able to get quite linear speedup in large datasets as the computation intensity of logadd for each value is very high.
+
 
 ## Partial Results
 All experiments are conducted on the Hidden Markov Model with 1024 hidden states and 32 observations. The observation sequence length is 1000.
