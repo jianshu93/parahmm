@@ -23,9 +23,9 @@ Our optimization focuses on two levels of parallelism: 1. SIMD parallelism 2. Mu
 Hidden Markov model contains a Markov chain of hidden states and their emisstion to observations. The network example is shown below. Notice that Markov property assumes that a state is only dependent on its direct predecessor state. And this is the premises of hidden markov model.
 ![GitHub Logo](Concepts.png)
 
-The main data structures for Hidden markov models are two matrixs storing the transition probability between hidden states and emission probability from hidden states to observations. The main operations on these two matrixs are from the calculation of $$\alpha$$ in forward algorithm, lambda in viterbi alogrithm and beta in backward algorithm. All computations of these three variables are similar. So We takes $$\alpha$$ as an example.
+The main data structures for Hidden markov models are two matrixs storing the transition probability between hidden states and emission probability from hidden states to observations. The main operations on these two matrixs are from the calculation of alpha in forward algorithm, lambda in viterbi alogrithm and beta in backward algorithm. All computations of these three variables are similar. So We takes alpha as an example.
 ![GitHub Logo](alphaTable.png)
-Each $$\alpha$$'s value is dependent on the all $$\alpha$$ values of last time slot. So, the calculation includes vector multiplication of $$\alpha$$ in last layer, transit probability and observation probability. And then, multiplication results in the vector are summed to be the final result $$\alpha$$. What should be noticed is the probabilities in real model is pretty small if the model keeps a large amount of hiddent states. So, All calculations are supposed to be conducted in log space. In this regard, all multiplications becomes addition. And in calculation of $$\alpha$$ and beta, the aggregation function at the last becomes logsum. The logsum functions is shown below:
+Each alpha's value is dependent on the all alpha values of last time slot. So, the calculation includes vector multiplication of alpha in last layer, transit probability and observation probability. And then, multiplication results in the vector are summed to be the final result alpha. What should be noticed is the probabilities in real model is pretty small if the model keeps a large amount of hiddent states. So, All calculations are supposed to be conducted in log space. In this regard, all multiplications becomes addition. And in calculation of alpha and beta, the aggregation function at the last becomes logsum. The logsum functions is shown below:
 ```
 logsum(x, y) = max(x, y) + log(1+exp(|y - x|))
 ```
@@ -76,7 +76,7 @@ Since we are using the AVX SIMD instructions to accelerate the algorithm, one ke
 
 
 
-## Partial Results
+## Results
 We conducts series of experiments on our ParaHMM implementation to evaluate the performance optimization we achieve.
 The device we use is GHC machine with 8 core (2 hyper-threads) 3.2 GHz Intel Core i7 processors. It supports AVX2 (256bits) vector instructions with OpenMP library. The program compiles with GCC -O2 configuration.
 All experiments are conducted on the Hidden Markov Model with 1024 hidden states and 32 observations. The observation sequence length is 1000. The baseline we compared with is the Single threaded implementation from cuHMM.
