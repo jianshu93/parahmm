@@ -4,8 +4,8 @@ Team members:
 - Yuchen Huo (<yhuo1@andrew.cmu.edu>)
 - Danhao Guo (<danhaog@andrew.cmu.edu>)
 
-# Final Report Temp
-## Summary
+# Final Report
+## Overview
 We implemented the multi-core parallel version of hidden Markov model (HMM) algorithms:
 1. Compute the probability of the observation sequence. (Forward / Backward Algorithm) 
 2. Decode the observations to find hidden state sequence with the most probablility. (Viterbi Algorithm) 
