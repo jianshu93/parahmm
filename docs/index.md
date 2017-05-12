@@ -45,7 +45,7 @@ for i in 0 .. T-1:
 			alpha[i][j] = logadd(alpha[i][j], p);
 ```
 
-Notice that we are traversing the alpha table row by row, while the accesses of transition matrix are column by column. This is not a cache friendly accessing pattern. A easy fix for this is to transpose the matrix so that the values are also read from the transition matrix row by row. Since there is no data dependency in each column, the multithreading implementation is able to get quite linear speedup in large datasets with lots of hidden states as the computation intensity of logadd for each value is very high. This could be seen from Figure ? where only  Viterbi algorithm benefits from matrix transpose. The other two algorithms are actually computation bounded.
+Notice that we are traversing the alpha table row by row, while the accesses of transition matrix are column by column. This is not a cache friendly accessing pattern. A easy fix for this is to transpose the matrix so that the values are also read from the transition matrix row by row. Since there is no data dependency in each column, the multithreading implementation is able to get quite linear speedup in large datasets with lots of hidden states as the computation intensity of logadd for each value is very high. This could be seen from Figure 7 where only Viterbi algorithm benefits from matrix transpose. The other two algorithms are actually computation bounded.
 ### SIMD with AVX intrinsics
 To further utilize SIMD instructions to speed up the computation, we need to vectorize the computation of the inner loop. AVX instructions could compute 8 floating point numbers with a single instruction which should be able to accelerate our algorithm a lot. Let’s check the actual computation first. The following graph is a visualized abstraction of the computation in the forward algorithm.
 ![GitHub Logo](VisualForward.png)
@@ -95,23 +95,25 @@ We conducts series of experiments on our ParaHMM implementation to evaluate the 
 The device we use is GHC machine with 8 core (2 hyper-threads) 3.2 GHz Intel Core i7 processors. It supports AVX2 (256bits) vector instructions with OpenMP library. The program compiles with GCC -O2 configuration.
 All experiments are conducted on the Hidden Markov Model with 1024 hidden states and 32 observations. The observation sequence length is 1000. The baseline we compared with is the Single threaded implementation from cuHMM.
 
-The Single thread optimization figure shows the performance speedup of our implementations compared with baseline. The result shows that SIMD implementations brings out more than 4 times speedup compared with transpose version, which is reasonable for SIMD implementation although the theoretical maximum speedup is 8x. Note that the performance gain of viterbi is quite different from the other two algorithms. The reason is that it use max function rather than logsum function to do aggregation. Its computation intensity is much lower. So, it benefits more from transpose instead of SIMD support compared with other two algorithms. Moreover, the speedup gain on loop unrolling proves that the locality of data access pattern improves a lot.
+The Single thread optimization figure shows the performance speedup of our implementations compared with baseline. Figure 7 shows that SIMD implementations brings out more than 4 times speedup compared with transpose version, which is reasonable for SIMD implementation although the theoretical maximum speedup is 8x. Note that the performance gain of viterbi is quite different from the other two algorithms. The reason is that it use max function rather than logsum function to do aggregation. Its computation intensity is much lower. So, it benefits more from transpose instead of SIMD support compared with other two algorithms. Moreover, the speedup gain on loop unrolling proves that the locality of data access pattern improves a lot.
 ![GitHub Logo](SingleThread.png)
 *Figure 7. Single Thread Optimization for All Three Algorithms*
 
-The result on multi-thread experiments shows great scalability of our algorithm. Our algorithm scales almost linearly on forward and baum-welch algorithm with sub-linear scalability. The reason why viterbi only scales sub-linearly is that its computation overhead is relative low so that the overhead of spawning threads is non-negligible. Note that non-linear speedup between 8 threads and 16 threads results from hyper-threading rather than physical multi-cores.
+Figure 8 shows great scalability of our algorithm. Our algorithm scales almost linearly on forward and baum-welch algorithm with sub-linear scalability. The reason why viterbi only scales sub-linearly is that its computation overhead is relative low so that the overhead of spawning threads is non-negligible. Note that non-linear speedup between 8 threads and 16 threads results from hyper-threading rather than physical multi-cores.
 ![GitHub Logo](MultithreadSpeedup.png)
 *Figure 8. Multithreading Speedup*
 
-Finally, we experiments our totally execution time. The Baseline here is the single-thread transpose version. The result shows we reduce forward algorithm running time from 38 seconds to 0.5 seconds. Viterbi algorithm also improves from 1030 milliseconds to 82 milliseconds. Baum-welch alogrithms finishes in 2 seconds instead of more than 80 seconds in baseline. The best speedup is achieved on forward algorithm, which is 75.63X.
+Finally, we experiments our totally execution time. The Baseline here is the single-thread transpose version. The result in Table 1 shows we reduce forward algorithm running time from 38 seconds to 0.5 seconds. Viterbi algorithm also improves from 1030 milliseconds to 82 milliseconds. Baum-welch alogrithms finishes in 2 seconds instead of more than 80 seconds in baseline. According to Figure 9, The best speedup is achieved on forward algorithm, which is 75.63X.
 ![GitHub Logo](ExecutionTime.png)
 *Table 1. Overall Execution Time for Each Algorithm*
 ![GitHub Logo](OptimizationSpeedup.png)
 *Figure 9. Overall Speedup for Each Algorithm*
 
-The main execution of forward and viterbi algorithm is focused on computation of alpha and lambda table. They cost almost all time consumed in the algorithm. For baum-welch algorithm, the workload can be divided into three parts as it is shown below. Backward algorithm includes computation of beta, Xi and GMM which also uses dynamic programming. Xi and GMM are used to compute updates on two matrices. Maybe more improvement on locality of Xi and GMM computation can be considered.
+The main execution of forward and viterbi algorithm is focused on computation of alpha and lambda table. They cost almost all time consumed in the algorithm. For baum-welch algorithm, the workload can be divided into three parts as Figure 10. Backward algorithm includes computation of beta, Xi and GMM which also uses dynamic programming. Xi and GMM are used to compute updates on two matrices. Maybe more improvement on locality of Xi and GMM computation can be considered.
+
 ![GitHub Logo](BaumWelchDivision.png)
-*Figure 9. Execution Time Division of Baum-Welch Algorithm*
+
+*Figure 10. Execution Time Division of Baum-Welch Algorithm*
 
 # Reference
 [1] Rabiner, Lawrence, and B. Juang.
