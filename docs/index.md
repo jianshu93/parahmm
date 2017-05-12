@@ -35,7 +35,7 @@ logsum(x, y) = max(x, y) + log(1+exp(|y - x|))
 This is where the main computation happens. Note that, the aggregation of lambdas in viterbi algorithm is maximum instead of summation. So, the maximum operations do not change in log space because of the monotonicity of log operations.
 
 ## Approach
-We tried to parallelize all three algorithms on multi-core CPU platforms with SIMD support. As previously discussed, the data dependency is between each column in the dynamic programming table \alpha, but the computation of each value in the same column is independent. So the multithreading parallel part is quite simple as the following pseudo code.
+We tried to parallelize all three algorithms on multi-core CPU platforms with SIMD support. We start from a sequential [implementation](https://github.com/chuan/chmm) of the HMM algorithms which also contains a cuda implementation. As previously discussed, the data dependency is between each column in the dynamic programming table \alpha, but the computation of each value in the same column is independent. So the multithreading parallel part is quite simple as the following pseudo code.
 ```
 for i in 0 .. T-1:
 	#pragma openmp parallel for
