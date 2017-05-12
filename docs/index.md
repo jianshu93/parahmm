@@ -19,6 +19,10 @@ Our optimization focuses on two levels of parallelism: 1. SIMD parallelism 2. Mu
 2. Matrices layouts have to be carefully chosen to avoid scatter and gather in the SIMD instructions.
 3. Three algorithms have different data access patterns, algorithms need to consider data locality.
 
+## Background
+Hidden 
+The main data structures for Hidden markov models are two matrixs storing the transition probability between hidden states and emission probability from hidden states to observations. 
+
 ## Approach
 As previously discussed, the data dependency is in 
 
