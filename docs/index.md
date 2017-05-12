@@ -27,7 +27,16 @@ Hidden markov model consists of a markov chain of hidden states and their emisst
 The main data structures for Hidden markov models are two matrixs storing the transition probability between hidden states and emission probability from hidden states to observations. 
 
 ## Approach
-As previously discussed, the data dependency is in 
+We tried to parallelize all three algorithms on multi-core CPU platforms with SIMD support. As previously discussed, the data dependency is between each column in the dynamic programming table \alpha, but the computation of each value in the same column is independent. So the multithreading parallel part is quite simple as the following pseudo code.
+```
+for i in 0 .. T-1:
+	#pragma openmp parallel for
+	For j in 1 ... N:
+		For k in 1 ... N:
+			p = alpha[(i-1)][k] + trans[k][j] + obvs[j][i]
+			alpha[i][j] = logadd(alpha[i][j], p);
+```
+
 
 ## Partial Results
 All experiments are conducted on the Hidden Markov Model with 1024 hidden states and 32 observations. The observation sequence length is 1000.
