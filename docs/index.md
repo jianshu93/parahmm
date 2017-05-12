@@ -6,10 +6,10 @@ Team members:
 
 # Final Report
 ## Overview
-We implemented the multi-core parallel version of hidden Markov model (HMM) algorithms:
+We implemented the multi-core parallel version of Hidden Markov Model (HMM) algorithms:
 1. Compute the probability of the observation sequence. (Forward / Backward Algorithm) 
 2. Decode the observations to find hidden state sequence with the most probablility. (Viterbi Algorithm) 
-3. Unsupervised training of hidden Markov mode parameters. (Baum-Welch Algorithm)
+3. Unsupervised training of Hidden Markov Mode parameters. (Baum-Welch Algorithm)
 
 We tested our implementation on the 8 physical cores hyper-threading GHC machines. With AVX instructions, we achieved **8.83X**, **5.60X** and **5.70X** speed up over baseline for single thread Forward, Viterbi and Baum-Welch algorithm . With 8 threads, we achieved **7.29X**, **4.56X** and **7.01X** speed up over the AVX implementation. **We achieved a total speed up of 75.63X and 56.99X over the best singled threaded baseline for Forward algorithm and Baum-Welch Training Algorithm using 16 threads on the GHC machine with AVX instructions.**
 
@@ -20,11 +20,11 @@ Our optimization focuses on two levels of parallelism: 1. SIMD parallelism 2. Mu
 3. Three algorithms have different data access patterns, algorithms need to consider data locality.
 
 ## Background
-Hidden Markov model contains a Markov chain of hidden states and their emisstion to observations. The network example is shown below. Notice that Markov property assumes that a state is only dependent on its direct predecessor state. And this is the premises of hidden markov model.
+Hidden Markov model contains a Markov chain of hidden states and their emisstion to observations. The network example is shown below. Notice that Markov property assumes that a state is only dependent on its direct predecessor state. And this is the premises of Hidden Markov Model.
 ![GitHub Logo](Concepts.png)
-*Figure 1. Concepts and data structure for hidden markov model*
+*Figure 1. Concepts and data structure for Hidden Markov Model*
 
-The main data structures for Hidden markov models are two matrixs storing the transition probability between hidden states and emission probability from hidden states to observations. The main operations on these two matrixs are from the calculation of alpha in forward algorithm, lambda in viterbi alogrithm and beta in backward algorithm. All computations of these three variables are similar. So We takes alpha as an example.
+The main data structures for Hidden Markov Models are two matrixs storing the transition probability between hidden states and emission probability from hidden states to observations. The main operations on these two matrixs are from the calculation of alpha in forward algorithm, lambda in viterbi alogrithm and beta in backward algorithm. All computations of these three variables are similar. So We takes alpha as an example.
 ![GitHub Logo](alphaTable.png)
 *Figure 2. Dynamic programming of alpha table computation*
 
@@ -107,12 +107,16 @@ Finally, we experiments our totally execution time. The Baseline here is the sin
 ![GitHub Logo](OptimizationSpeedup.png)
 *Figure 9. Overall Speedup For Each Algorithm*
 
+# Reference
+[1] Rabiner, Lawrence, and B. Juang.
+"An introduction to Hidden Markov Models." ieee assp magazine 3.1 (1986): 4-16.
+
 # Middle Checkpoint
 Our original project idea was to extend the Kernalized Correlation Filter (KCF) [2, 3], a fast object tracker, to the multicore platform. We downloaded the original paper’s code and built up the test framework using the [Need for Speed benchmark](http://ci2cv.net/nfs/index.html)  and [VOT2014 benchmark]( http://www.votchallenge.net/vot2014/dataset.html). We then performed some profiling on the sequential implementation. The result shows that most of the cpu time is spent in the discrete fourier transform and the HOG feature extraction which is consistent to our intuition. However, as in the object tracking tasks, the bounding box of the target object is not very large and after using HOG feature which compresses 4x4 cells into single feature descriptor, the dft computation is conducted on a quite small matrix. According to our measurement, the processing time for a single frame is about 8ms where dft time holds for 4-5ms. Since in object tracking task each frame’s computation depends on the result of the previous one, the dependency is pretty high. Therefore, we think this system is not very suitable for multithreading, since the overhead of spawning and synchronization would be larger than the actual computation. We actually try to use the FFTW library to replace the opencv implementation for the code, the performance becomes worse. Therefore, the only parallelism we could benefit from would be using SIMD instructions. We think this project actually could not get much performance improvement from the multicore platform and seems to be quite narrow in opptimization approaches. We decided to switch the project. 
 
 # New proposal
 ## Summary
-We are going to implement the parallel version of hidden Markov model (HMM) [1] training and classification algorithm utilizing SIMD and multithreading. HMM involves three basic problems: 
+We are going to implement the parallel version of Hidden Markov Model (HMM) [1] training and classification algorithm utilizing SIMD and multithreading. HMM involves three basic problems: 
 1. Compute the probability of the observation sequence. (Forward / Backward Algorithm) 
 2. Decode the observations to find hidden state sequence with the most probablility. (Viterbi Algorithm) 
 3. Unsupervised training of hidden Markov mode parameters. (Baum-Welch Algorithm)
@@ -159,7 +163,7 @@ Since it is a bit late in the whole schedule, we would try our best to catch up.
 
 ## Reference
 [1] Rabiner, Lawrence, and B. Juang.
-"An introduction to hidden Markov models." ieee assp magazine 3.1 (1986): 4-16.
+"An introduction to Hidden Markov Models." ieee assp magazine 3.1 (1986): 4-16.
 
 # Original Proposal
 ## C++ Parallel KCF Tracker
