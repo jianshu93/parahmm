@@ -1,24 +1,24 @@
 # Introduction
-This is an implementation of hidden Markov model (HMM) training and classification for NVIDIA CUDA platform. A serial implementation in C is also included for comparison.
+This is an parallel implementation of hidden Markov model (HMM) training and classification for multicore platform with AVX2 instruction support based on the [sequential implementation](https://github.com/chuan/chmm) by Chuan Liu. We maintian the same interface as his implementation. The README file is borrowed from his repository.
 
-The implementation of HMM follows the tutorial paper by Rabiner. The three problem for HMM defined in the paper are:
+The three problem for HMM defined in the paper are:
 
 1. compute the probability of the observation sequence
 2. compute the most probable sequence
 3. train hidden Markov mode parameters
 
-This implementation supports all the three problems. However there is no support for continuous densities.
+This implementation supports all the three problems.
 
 # Usage
 The command line usage is as follows.
 
 ```
 $ ./hmm -h
-hmm [-hnt] [-c config] [-p(1|2|3)]
+hmm [-hnt] [-c config] [-p(1|2|3)] [-tN]
 usage:
   -h   help
   -c   configuration file
-  -t   output computation time
+  -tN  indicate how many threads to use
   -p1  compute the probability of the observation sequence
   -p2  compute the most probable sequence (Viterbi)
   -p3  train hidden Markov mode parameters (Baum-Welch)
