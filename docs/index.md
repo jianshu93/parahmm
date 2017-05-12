@@ -48,7 +48,9 @@ Since there is no data dependency in each column, the multithreading implementat
 
 
 ## Partial Results
-All experiments are conducted on the Hidden Markov Model with 1024 hidden states and 32 observations. The observation sequence length is 1000.
+We conducts series of experiments on our ParaHMM implementation to evaluate the performance optimization we achieve.
+The device we use is GHC machine with 8 core (2 hyper-threads) 3.2 GHz Intel Core i7 processors. It supports AVX2(256bits) vector instructions with OpenMP library. The program compiles with GCC -O2 configuration.
+All experiments are conducted on the Hidden Markov Model with 1024 hidden states and 32 observations. The observation sequence length is 1000. The baseline we compared with is the Single threaded implementation from cuHMM.
 
 ![GitHub Logo](SingleThread.png)
 *Single thread optimization for all three algorithms*
