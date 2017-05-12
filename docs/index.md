@@ -42,9 +42,37 @@ for i in 0 .. T-1:
 			alpha[i][j] = logadd(alpha[i][j], p);
 ```
 
-Notice that we are traversing the alpha table row by row, while the accesses of transition matrix are column by column. This is not a cache friendly accessing pattern. A easy fix for this is to transpose the matrix so that the values are also read from the transition matrix row by row.
+Notice that we are traversing the alpha table row by row, while the accesses of transition matrix are column by column. This is not a cache friendly accessing pattern. A easy fix for this is to transpose the matrix so that the values are also read from the transition matrix row by row. Since there is no data dependency in each column, the multithreading implementation is able to get quite linear speedup in large datasets with lots of hidden states as the computation intensity of logadd for each value is very high. This could be seen from Figure ? where only  Viterbi algorithm benefits from matrix transpose. The other two algorithms are actually computation bounded.
+### SIMD with AVX intrinsics
+To further utilize SIMD instructions to speed up the computation, we need to vectorize the computation of the inner loop. AVX instructions could compute 8 floating point numbers with a single instruction which should be able to accelerate our algorithm a lot. Let’s check the actual computation first. The following graph is a visualized abstraction of the computation in the forward algorithm.
+![GitHub Logo](VisualForward.png)
+As you can see, each thread would need to compute the sum of all multiplication results for a single value in column alpha[t]. It is simple to use AVX instructions for the multiplication part. However, in the end we need to compute the sum of the values in the 256bits register, which is not very efficient since we need to perform a horizontal reduction by shifting and addition (six operations to get the sum of eight values). What is even worse is that in the log space, we cannot get the sum by simple addition. Instead, we have to perform an expensive logsum as we have discussed in the background section. The horizontal logsum becomes even more inefficient and this becomes a bottleneck for the SIMD utilization. The reason is that most of the computation time for forward algorithm is taken in the logsum operation and therefore parallelizing the multiplication part does not contribute too much.
+Since the key issue here is that we need to perform a horizontal summation with AVX instruction, we could change the problem to a vertical summation which accumulates the sum for each different alpha value we need to compute. The following figure shows the difference between these two approaches.
+![GitHub Logo](verticalhorizon.png)
+In the sequential algorithm, we have to perform the sum reduction since we are computing a single alpha value which is shown in the upper part. Our SIMD implementation avoids the reduction by putting the eight results in the SIMD vector and accumulating the multiplication results to the result vector. Here, we use an [AVX_Math]( http://software-lisc.fbk.eu/avx_mathfun/) library which could computes the logarithm and exponentials for AVX vectors. Based on that, we are able to implement the AVX_logsum which could add eight multiplication results to the accumulator and fully utilize the SIMD units.
+```
+inline __m256 logadd(__m256 a, __m256 b) {
+    __m256 max_AVX, min_AVX; 
+    __m256 all_one = _mm256_set1_ps(1);
+    max_AVX = _mm256_max_ps(a, b);
+    min_AVX = _mm256_min_ps(a, b);
+    min_AVX = _mm256_sub_ps(min_AVX, max_AVX);
+    min_AVX = exp256_ps(min_AVX);
+    min_AVX = _mm256_add_ps(min_AVX, all_one);
+    min_AVX = log256_ps(min_AVX);
+    return _mm256_add_ps(max_AVX,  min_AVX);
+}
+```
+### Loop Unrolling to get better locality
+After we change the algorithm, the memory access pattern actually changes. The following figure gives a taste of the access pattern of the transition matrix.
+![GitHub Logo]( simdmemoryaccess.png)
+In each inner loop, we would read out 8 float values from transition matrix and perform SIMD operations on them. This access pattern is not ideal, since we are still read values vertically. However, it does not impair the performance too much since the computation intensity is pretty high as we are using the AVX SIMD instructions.
+Since the cache line size is 512 bits long, while AVX register is only 256 bits long, the rest 8 float values would be evicted out of the higher level cache due to our vertical access pattern. We could solve this problem by loop unrolling and accumulating 2 SIMD vectors. In this case, we are able to use all the values we read into the Level 1 cache line which doubles the computation intensity.
+One interesting thing here is that for the sequential algorithm, we use the transpose matrix to improve locality while we have to use the original matrix to improve the SIMD utilization. The key take away is that for parallel programing, the best data layout may differ from each algorithm.
+### Different model size support
+Since we are using the AVX SIMD instructions to accelerate the algorithm, one key requirement is that all matrices have to be 32 bytes aligned. Our experiments are mainly performed on hidden states like 256, 512, 1024 etc. where each the data alignment and partitioning is not a problem. However, in order to make our implementation suitable for different sizes of models, we use padding to make all operations could still be performed by AVX operations.
+![smiley](padding.png){:height="36px" width="36px"}.
 
-Since there is no data dependency in each column, the multithreading implementation is able to get quite linear speedup in large datasets as the computation intensity of logadd for each value is very high.
 
 
 ## Partial Results
