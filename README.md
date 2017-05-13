@@ -115,6 +115,3 @@ The following example shows a 16 states HMM with 2 observation symbols and 32 in
 0 1 0 1 0 0 1 1 0 0 
 0 0 1 0 1 1 1 1 0 0 
 ```
-
-# Further Information
-For more detailed information, please refer to the report at http://liuchuan.org/pub/cuHMM.pdf
