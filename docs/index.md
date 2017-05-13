@@ -115,7 +115,7 @@ The main execution of Forward and Viterbi algorithm is focused on computation of
 
 *Figure 10. Execution Time Division of Baum-Welch Algorithm*
 
-As for the machine target, we still believe that multi-core machine should be the best choice for HMM computation. The reason is that the use scenario of HMM limits its model size (hidden state size and observation size). So, GPU cannot be fully utilized in small models. Meanwhile, the memory access pattern locality is still a issue of performance especially in Viterbi algorithm. The computation workload may not be that intense so that GPU resource utilization could be low. Lastly, our result in Table 1 proves that Multi-core with SIMD is fast enough to run all three HMM algorithm. All in all, Multi-core machine is the best choice for balancing data access overhead and computation overhead so that the resource utilization becomes higher. 
+Since the HMM model has data dependency between each layer, therefore the parallelism is limited by the model size. We think GPU would not be a suitable platform for normal model size (hidden state size and observation size) where the hardware cannot be fully utilized. However, it is possible to use GPUs for throughput sensitive scenarios, where lots of requests can be computed at the same time. For latency sensitive tasks we believes that the multithreading SIMD implementation would be enough as we could achieve pretty high performance.
 
 # Reference
 [1] Rabiner, Lawrence, and B. Juang.
