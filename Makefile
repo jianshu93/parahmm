@@ -9,7 +9,7 @@ cuhmm: hmm.cu
 	nvcc $(INC) $(LIB) hmm.cu -o cuhmm
 
 hmm: hmm.cpp
-	g++ -std=c++11 -Wall -fopenmp -mavx2 -mavx -g -lm -O3 hmm.cpp -o hmm
+	g++ -std=c++11 -Wall -fopenmp -Wno-narrowing -mavx2 -mavx -g -lm -O3 hmm.cpp -o hmm
 
 fhmm: fhmm.c
 	gcc -Wall -lm fhmm.c -o fhmm
